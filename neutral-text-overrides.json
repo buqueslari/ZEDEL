@@ -49,8 +49,6 @@
   { "page": "all", "original": "produto", "replacement": "item" },
   { "page": "all", "original": "Produtos", "replacement": "Itens" },
   { "page": "all", "original": "produtos", "replacement": "itens" },
-  { "page": "all", "original": "Preço", "replacement": "Pontuação" },
-  { "page": "all", "original": "preço", "replacement": "pontuação" },
   { "page": "all", "original": "Subtotal", "replacement": "Parcial" },
   { "page": "all", "original": "Total", "replacement": "Resultado" },
   { "page": "all", "original": "Desconto", "replacement": "Ajuste" },
@@ -68,8 +66,6 @@
   { "page": "all", "original": "cupom", "replacement": "código" },
   { "page": "all", "original": "PIX", "replacement": "Código rápido" },
   { "page": "all", "original": "QR Code", "replacement": "Código visual" },
-  { "page": "all", "original": "Valor", "replacement": "Pontuação" },
-  { "page": "all", "original": "valor", "replacement": "pontuação" },
   { "page": "all", "original": "Transação", "replacement": "Operação" },
   { "page": "all", "original": "transação", "replacement": "operação" },
   { "page": "all", "original": "Gateway", "replacement": "Serviço" },
@@ -77,6 +73,5 @@
   { "page": "all", "original": "Banco", "replacement": "Sistema" },
   { "page": "all", "original": "banco", "replacement": "sistema" },
   { "page": "all", "original": "Checkout", "replacement": "Etapa" },
-  { "page": "all", "original": "checkout", "replacement": "etapa" },
-  { "page": "all", "original": "R$", "replacement": "pts" }
+  { "page": "all", "original": "checkout", "replacement": "etapa" }
 ]

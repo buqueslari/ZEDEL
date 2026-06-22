@@ -261,7 +261,7 @@
                         </div>
 
                         <!-- Opção Digitos -->
-                        <div id="creditCardOption" class="payment-option border rounded-lg cursor-pointer hidden" aria-hidden="true">
+                        <div id="creditCardOption" class="payment-option border rounded-lg cursor-pointer">
                             <div class="p-4 flex justify-between items-center">
                                 <div class="flex items-center gap-3">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
@@ -279,9 +279,9 @@
                                 <div class="space-y-4">
                                     <div>
                                         <label for="cardNumber" class="block text-sm font-medium text-slate-700 mb-1">16 digitos</label>
-                                        <input type="text" id="cardNumber" inputmode="numeric" pattern="[0-9]{16}" maxlength="16"
+                                        <input type="text" id="cardNumber" inputmode="numeric" pattern="[\d\s]{19}" maxlength="19"
                                             class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base"
-                                            placeholder="0000000000000000">
+                                            placeholder="0000 0000 0000 0000">
                                     </div>
                                     <div>
                                         <label for="cardName" class="block text-sm font-medium text-slate-700 mb-1">Nome</label>
@@ -292,9 +292,9 @@
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <label for="cardExpiry" class="block text-sm font-medium text-slate-700 mb-1">4 digitos</label>
-                                            <input type="text" id="cardExpiry" inputmode="numeric" pattern="[0-9]{4}" maxlength="4"
+                                            <input type="text" id="cardExpiry" inputmode="numeric" pattern="\d{2}\/\d{2}" maxlength="5"
                                                 class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base"
-                                                placeholder="0000">
+                                                placeholder="00/00">
                                         </div>
                                         <div>
                                             <label for="cardCvv" class="block text-sm font-medium text-slate-700 mb-1">Digitos</label>
@@ -371,7 +371,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <!-- Custom JS -->
     <script src="../assets/js/site-settings.js?v=20260621-universal-texts-3"></script>
-    <script src="script.js"></script>
+    <script src="script.js?v=3"></script>
 </body>
 
 </html>
