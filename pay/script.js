@@ -2242,3 +2242,306 @@ handlePayment = async function (paymentMethod) {
     }
     return __handlePaymentOriginalLocalDemo(paymentMethod);
 };
+
+// ===============================
+// PATCH - CORRIGIR FLUXO DO ENTREGADOR
+// Cole este bloco no FINAL do arquivo JS
+// ===============================
+
+(function () {
+    function el(id) {
+        return document.getElementById(id);
+    }
+
+    function hide(id) {
+        el(id)?.classList.add('hidden');
+    }
+
+    function show(id) {
+        el(id)?.classList.remove('hidden');
+    }
+
+    function setText(id, value) {
+        const element = el(id);
+        if (element) element.innerText = value ?? '';
+    }
+
+    function getFullAddressFromForm() {
+        const street = el('street')?.value || '';
+        const number = el('number')?.value || '';
+        const neighborhood = el('neighborhood')?.value || '';
+        const city = el('city')?.value || '';
+
+        return `${street}, ${number} - ${neighborhood}, ${city}`;
+    }
+
+    function ensureDriverFoundStepExists() {
+        let driverStep = el('driverFoundStep');
+
+        if (driverStep) return driverStep;
+
+        const main = document.querySelector('main') || document.body;
+
+        driverStep = document.createElement('section');
+        driverStep.id = 'driverFoundStep';
+        driverStep.className = 'hidden bg-white p-6 rounded-xl border border-slate-200 space-y-4';
+
+        driverStep.innerHTML = `
+            <h2 class="text-xl font-bold text-slate-800">Entregador encontrado</h2>
+
+            <div id="mapContainer" style="width:100%;height:220px;border-radius:12px;overflow:hidden;background:#f1f5f9;"></div>
+
+            <div class="space-y-2 text-sm text-slate-700">
+                <p><strong>Nome:</strong> <span id="driverName"></span></p>
+                <p><strong>Avaliação:</strong> <span id="driverRating"></span> ⭐</p>
+                <p><strong>Veículo:</strong> <span id="driverCar"></span></p>
+                <p><strong>Placa:</strong> <span id="driverPlate"></span></p>
+                <p><strong>Distância:</strong> <span id="deliveryDistance"></span></p>
+                <p><strong>Tempo estimado:</strong> <span id="deliveryTime"></span></p>
+                <p><strong>Endereço:</strong> <span id="driverAddress"></span></p>
+                <p><strong>Distribuidor:</strong> <span id="distributorCnpj"></span></p>
+            </div>
+
+            <button id="continueToReviewButton" type="button" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                Continuar
+            </button>
+        `;
+
+        main.appendChild(driverStep);
+        return driverStep;
+    }
+
+    function renderStaticMapFallback(mapContainer) {
+        if (!mapContainer) return;
+
+        mapContainer.innerHTML = `
+            <iframe
+                width="100%"
+                height="100%"
+                frameborder="0"
+                scrolling="no"
+                src="https://www.openstreetmap.org/export/embed.html?bbox=-46.70%2C-23.60%2C-46.57%2C-23.50&layer=mapnik"
+                style="border:0; pointer-events:none;">
+            </iframe>
+        `;
+    }
+
+    async function renderMapSafely(addressString, preloadedGeo) {
+        const mapContainer = el('mapContainer');
+        if (!mapContainer) return;
+
+        mapContainer.innerHTML = '';
+
+        try {
+            if (typeof L === 'undefined') {
+                renderStaticMapFallback(mapContainer);
+                return;
+            }
+
+            if (typeof leafletMap !== 'undefined' && leafletMap) {
+                leafletMap.remove();
+            }
+
+            let geo = preloadedGeo;
+
+            if (!geo && typeof geocodeAddress === 'function') {
+                geo = await geocodeAddress(addressString);
+            }
+
+            if (!geo || !geo.lat || !geo.lon) {
+                renderStaticMapFallback(mapContainer);
+                return;
+            }
+
+            const customerLatLng = L.latLng(geo.lat, geo.lon);
+
+            leafletMap = L.map(mapContainer, {
+                zoomControl: false,
+                scrollWheelZoom: false,
+                dragging: false,
+                doubleClickZoom: false,
+                attributionControl: false
+            }).setView(customerLatLng, 16);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(leafletMap);
+
+            const markerIcon = L.divIcon({
+                className: '',
+                html: `
+                    <div style="
+                        background:#f59e0b;
+                        width:32px;
+                        height:32px;
+                        border-radius:50% 50% 50% 0;
+                        transform:rotate(-45deg);
+                        border:3px solid #fff;
+                        box-shadow:0 2px 8px rgba(0,0,0,0.3);
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                    ">
+                        <div style="
+                            transform:rotate(45deg);
+                            color:#fff;
+                            font-size:14px;
+                            font-weight:bold;
+                        ">📍</div>
+                    </div>
+                `,
+                iconSize: [32, 32],
+                iconAnchor: [16, 32],
+                popupAnchor: [0, -32]
+            });
+
+            L.marker(customerLatLng, { icon: markerIcon })
+                .addTo(leafletMap)
+                .bindPopup('<b>Seu Endereço Aproximado</b>')
+                .openPopup();
+
+            setTimeout(() => {
+                if (leafletMap) leafletMap.invalidateSize();
+            }, 150);
+
+        } catch (error) {
+            console.warn('[driver-map] Erro ao renderizar mapa:', error);
+            renderStaticMapFallback(mapContainer);
+        }
+    }
+
+    window.showDriverFoundScreen = async function (addressString, preloadedGeo = null) {
+        ensureDriverFoundStepExists();
+
+        hide('loadingStep');
+        hide('paymentStep');
+        hide('reviewStep');
+        hide('pixContainer');
+
+        el('checkoutForm')?.classList.add('hidden');
+
+        const driver = typeof getDailyDriverData === 'function'
+            ? getDailyDriverData()
+            : {
+                name: 'ENTREGADOR TESTE',
+                rating: '4.9',
+                plate: 'ABC-1D23',
+                vehicle: 'Honda CG 160',
+                distance: '2.4',
+                time: '14'
+            };
+
+        setText('driverName', driver.name);
+        setText('driverRating', driver.rating);
+        setText('driverPlate', driver.plate);
+        setText('driverCar', driver.vehicle);
+        setText('deliveryDistance', `${driver.distance} km`);
+        setText('deliveryTime', `~${driver.time} min`);
+        setText('driverAddress', addressString);
+        setText('distributorCnpj', 'CNPJ 39.xxx.xxx/0001-07');
+
+        show('driverFoundStep');
+
+        if (typeof updateProgressBar === 'function') {
+            updateProgressBar(2);
+        }
+
+        await renderMapSafely(addressString, preloadedGeo);
+
+        window.scrollTo(0, 0);
+    };
+
+    window.showLoadingAndDriverSearch = async function () {
+        const fullAddress = getFullAddressFromForm();
+
+        hide('paymentStep');
+        hide('reviewStep');
+        hide('driverFoundStep');
+        hide('pixContainer');
+
+        el('checkoutForm')?.classList.add('hidden');
+
+        const loadingStep = el('loadingStep');
+        const loadingAddress = el('loadingAddress');
+
+        if (loadingAddress) {
+            loadingAddress.innerText = fullAddress;
+        }
+
+        if (loadingStep) {
+            loadingStep.classList.remove('hidden');
+        }
+
+        window.scrollTo(0, 0);
+
+        let geoResult = null;
+
+        try {
+            const minDelay = new Promise(resolve => setTimeout(resolve, 1800));
+
+            if (typeof geocodeAddress === 'function') {
+                const geocodePromise = geocodeAddress(fullAddress).catch(() => null);
+                const result = await Promise.all([geocodePromise, minDelay]);
+                geoResult = result[0];
+            } else {
+                await minDelay;
+            }
+        } catch (error) {
+            console.warn('[driver] Falha ao buscar localização:', error);
+        }
+
+        await window.showDriverFoundScreen(fullAddress, geoResult);
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const oldButton = el('findDriverButton');
+
+        if (oldButton && oldButton.parentNode) {
+            const newButton = oldButton.cloneNode(true);
+            oldButton.parentNode.replaceChild(newButton, oldButton);
+
+            newButton.addEventListener('click', async function (event) {
+                event.preventDefault();
+
+                const checkoutForm = el('checkoutForm');
+                const addressStep = el('addressStep');
+
+                const requiredFields = addressStep
+                    ? [...addressStep.querySelectorAll('input[required]')]
+                    : [];
+
+                const isValid = requiredFields.every(field => field.checkValidity());
+
+                if (!isValid) {
+                    checkoutForm?.reportValidity();
+                    return;
+                }
+
+                await window.showLoadingAndDriverSearch();
+            });
+        }
+
+        document.addEventListener('click', function (event) {
+            const continueButton = event.target.closest('#continueToReviewButton');
+
+            if (!continueButton) return;
+
+            event.preventDefault();
+
+            if (typeof showReviewStep === 'function') {
+                showReviewStep();
+                return;
+            }
+
+            hide('driverFoundStep');
+            show('paymentStep');
+
+            if (typeof updateProgressBar === 'function') {
+                updateProgressBar(3);
+            }
+
+            window.scrollTo(0, 0);
+        });
+    });
+})();
