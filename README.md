@@ -114,7 +114,7 @@ https://www.meusite.com.br,https://meusite.com.br
 ```
 
 7. Clique em **Deploy**.
-8. Copie a URL gerada, por exemplo `https://central-de-dados.vercel.app`.
+8. Copie a URL gerada, por exemplo `https://central-de-da-dos.vercel.app/`.
 
 ## 5. Conectar o formulario que ja existe
 
@@ -135,7 +135,7 @@ Exemplo de HTML compativel:
 Adicione este JavaScript ao arquivo que atualmente controla o envio do formulario. Troque a URL pela URL real do painel na Vercel:
 
 ```js
-const DATA_API_URL = "https://central-de-dados.vercel.app/api/submit";
+const DATA_API_URL = "https://central-de-da-dos.vercel.app//api/submit";
 
 const form = document.querySelector("#client-form");
 
@@ -186,7 +186,7 @@ Nao crie um segundo envio. Dentro do evento existente, monte `payload` e execute
 A pagina **Configuracoes** permite alterar titulo, mensagem e rotulos. O frontend pode buscar esses textos:
 
 ```js
-const CONFIG_URL = "https://central-de-dados.vercel.app/api/form-config";
+const CONFIG_URL = "https://central-de-da-dos.vercel.app//api/form-config";
 const config = await fetch(CONFIG_URL).then((response) => response.json());
 
 document.querySelector('label[for="client-name"]').textContent = config.name_label;
@@ -196,7 +196,7 @@ Essa etapa e opcional. O recebimento dos dados funciona sem buscar a configuraca
 
 ## 7. Entrar no painel
 
-1. Acesse `https://central-de-dados.vercel.app/login`.
+1. Acesse `https://central-de-da-dos.vercel.app//login`.
 2. Informe o email e a senha criados no Supabase.
 3. Abra **Recebimentos** para acompanhar novos envios.
 4. Abra **Configuracoes** para alterar os textos.
