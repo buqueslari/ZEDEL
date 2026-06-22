@@ -696,8 +696,10 @@ async function verificarIdade() {
             }
         });
 
-        document.getElementById('reviews').style.display = 'none';
-        document.getElementById('currentYearFooter').textContent = new Date().getFullYear();
+        const reviewsSection = document.getElementById('reviews');
+        const currentYearFooter = document.getElementById('currentYearFooter');
+        if (reviewsSection) reviewsSection.style.display = 'none';
+        if (currentYearFooter) currentYearFooter.textContent = new Date().getFullYear();
 
         // 4. CÓDIGO CORRIGIDO E SEGURO PARA A BARRA DE PESQUISA FIXA
         try {

@@ -7,6 +7,7 @@
       window.__siteSettings = settings;
       applyStore(settings.store || {});
       applyCheckout(settings.checkout || {});
+      applyTextOverrides(settings.textOverrides || []);
       applyMarketing(settings.marketing || {});
     } catch (error) {
       console.warn("Configurações do admin não foram carregadas:", error.message);
@@ -89,6 +90,153 @@
     text("#checkout-footer-text", checkout.footerText);
 
     window.__checkoutTextOverrides = checkout;
+  }
+
+  const textNodeState = new WeakMap();
+  const attributeState = new WeakMap();
+  let titleState = null;
+  let textObserver = null;
+
+  function applyTextOverrides(overrides) {
+    const page = currentTextPage();
+    const rules = (Array.isArray(overrides) ? overrides : [])
+      .filter((entry) => entry && (entry.page === page || entry.page === "all") && String(entry.original || "").trim())
+      .map((entry) => ({
+        original: String(entry.original),
+        replacement: String(entry.replacement ?? ""),
+      }))
+      .sort((left, right) => right.original.length - left.original.length);
+
+    window.__universalTextRules = rules;
+    applyDocumentTitle(rules);
+    applyTextTree(document.body, rules);
+
+    textObserver?.disconnect();
+    textObserver = new MutationObserver((records) => {
+      const currentRules = window.__universalTextRules || [];
+      records.forEach((record) => {
+        if (record.type === "characterData") {
+          applyTextNode(record.target, currentRules);
+          return;
+        }
+        if (record.type === "attributes") {
+          applyElementAttribute(record.target, record.attributeName, currentRules);
+          return;
+        }
+        record.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.TEXT_NODE) applyTextNode(node, currentRules);
+          if (node.nodeType === Node.ELEMENT_NODE) applyTextTree(node, currentRules);
+        });
+      });
+    });
+    const observationRoot = document.body;
+    if (observationRoot) {
+      try {
+        textObserver.observe(observationRoot, {
+          subtree: true,
+          childList: true,
+          characterData: true,
+          attributes: true,
+          attributeFilter: ["placeholder", "title", "aria-label", "alt"],
+        });
+      } catch (error) {
+        console.warn("Editor universal: observador dinâmico indisponível.", error.message);
+      }
+    }
+  }
+
+  function currentTextPage() {
+    const pathname = window.location.pathname.toLowerCase();
+    if (document.querySelector("#checkoutForm") || pathname.startsWith("/pay")) return "checkout";
+    if (pathname.includes("privacidade")) return "privacy";
+    if (pathname.includes("trocas-devolucoes")) return "returns";
+    return "store";
+  }
+
+  function applyTextTree(root, rules) {
+    if (!root) return;
+    if (root.nodeType === Node.ELEMENT_NODE) applyElementAttributes(root, rules);
+
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+    let node = walker.nextNode();
+    while (node) {
+      if (node.nodeType === Node.TEXT_NODE) applyTextNode(node, rules);
+      else applyElementAttributes(node, rules);
+      node = walker.nextNode();
+    }
+  }
+
+  function applyTextNode(node, rules) {
+    if (!node?.parentElement || /^(SCRIPT|STYLE|NOSCRIPT|TEXTAREA)$/i.test(node.parentElement.tagName)) return;
+    let state = textNodeState.get(node);
+    if (!state) {
+      state = { baseline: node.data, lastApplied: node.data };
+      textNodeState.set(node, state);
+    } else if (node.data !== state.lastApplied) {
+      state.baseline = node.data;
+    }
+
+    const next = transformTextValue(state.baseline, rules);
+    state.lastApplied = next;
+    if (node.data !== next) node.data = next;
+  }
+
+  function applyElementAttributes(element, rules) {
+    ["placeholder", "title", "aria-label", "alt"].forEach((name) => {
+      if (element.hasAttribute?.(name)) applyElementAttribute(element, name, rules);
+    });
+  }
+
+  function applyElementAttribute(element, name, rules) {
+    if (!element?.hasAttribute?.(name)) return;
+    let states = attributeState.get(element);
+    if (!states) {
+      states = {};
+      attributeState.set(element, states);
+    }
+
+    const current = element.getAttribute(name) || "";
+    let state = states[name];
+    if (!state) {
+      state = { baseline: current, lastApplied: current };
+      states[name] = state;
+    } else if (current !== state.lastApplied) {
+      state.baseline = current;
+    }
+
+    const next = transformTextValue(state.baseline, rules);
+    state.lastApplied = next;
+    if (current !== next) element.setAttribute(name, next);
+  }
+
+  function applyDocumentTitle(rules) {
+    if (!titleState) titleState = { baseline: document.title, lastApplied: document.title };
+    else if (document.title !== titleState.lastApplied) titleState.baseline = document.title;
+    const next = transformTextValue(titleState.baseline, rules).trim();
+    titleState.lastApplied = next;
+    if (document.title !== next) document.title = next;
+  }
+
+  function transformTextValue(value, rules) {
+    let result = String(value ?? "");
+    for (const rule of rules) {
+      const original = rule.original;
+      if (!original || result === rule.replacement) continue;
+
+      const leading = result.match(/^\s*/)?.[0] || "";
+      const trailing = result.match(/\s*$/)?.[0] || "";
+      const core = result.slice(leading.length, result.length - trailing.length || undefined);
+      if (normalizeText(core) === normalizeText(original)) {
+        result = `${leading}${rule.replacement}${trailing}`;
+      } else if (result.includes(original)) {
+        result = result.split(original).join(rule.replacement);
+      }
+    }
+    return result;
+  }
+
+  function normalizeText(value) {
+    return String(value || "").replace(/\s+/g, " ").trim();
   }
 
   function normalizeAdsId(input) {

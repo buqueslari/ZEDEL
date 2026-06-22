@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Painel Admin - Digitos</title>
-  <link rel="stylesheet" href="/admin/admin.css?v=20260620-2">
+  <link rel="stylesheet" href="/admin/admin.css?v=20260621-universal-texts">
   <script src="https://unpkg.com/lucide@latest" defer></script>
-  <script src="/admin/admin.js?v=20260620-2" defer></script>
+  <script src="/admin/admin.js?v=20260621-universal-texts" defer></script>
 </head>
 <body>
   <aside class="sidebar">
@@ -23,6 +23,7 @@
       <button class="tab" data-tab="categories"><i data-lucide="tags"></i><span>Categorias</span></button>
       <button class="tab" data-tab="texts"><i data-lucide="type"></i><span>Textos da loja</span></button>
       <button class="tab" data-tab="checkout"><i data-lucide="truck"></i><span>Checkout</span></button>
+      <button class="tab" data-tab="all-texts"><i data-lucide="languages"></i><span>Todos os textos</span></button>
       <button class="tab" data-tab="payments"><i data-lucide="qr-code"></i><span>Pix</span></button>
       <button class="tab" data-tab="marketing"><i data-lucide="badge-dollar-sign"></i><span>Pixel</span></button>
       <button class="tab" data-tab="supabase"><i data-lucide="database"></i><span>Supabase</span></button>
@@ -109,6 +110,51 @@
         <button id="saveCheckoutBtn" class="primary"><i data-lucide="save"></i><span>Salvar checkout</span></button>
       </div>
       <form id="checkoutFormAdmin" class="form-grid"></form>
+    </section>
+
+    <section id="all-texts" class="panel">
+      <div class="form-header">
+        <div>
+          <h2>Editor universal de textos</h2>
+          <p class="muted">Edite textos da loja, checkout, telas dinâmicas e páginas legais. O campo pode ficar vazio para ocultar um texto.</p>
+        </div>
+        <button id="saveTextOverridesBtn" class="primary"><i data-lucide="save"></i><span>Salvar todos os textos</span></button>
+      </div>
+
+      <div class="universal-toolbar">
+        <label class="search"><i data-lucide="search"></i><input id="textSearch" placeholder="Buscar qualquer texto"></label>
+        <select id="textPageFilter" aria-label="Filtrar página">
+          <option value="">Todas as páginas</option>
+          <option value="store">Loja</option>
+          <option value="checkout">Checkout</option>
+          <option value="privacy">Privacidade</option>
+          <option value="returns">Trocas e devoluções</option>
+        </select>
+        <label class="changed-filter"><input id="textChangedOnly" type="checkbox"> Somente alterados</label>
+        <button id="addTextOverrideBtn" class="ghost" type="button"><i data-lucide="plus"></i><span>Adicionar texto manual</span></button>
+      </div>
+
+      <div id="manualTextOverride" class="manual-override" hidden>
+        <label>Página
+          <select id="manualTextPage">
+            <option value="store">Loja</option>
+            <option value="checkout">Checkout</option>
+            <option value="privacy">Privacidade</option>
+            <option value="returns">Trocas e devoluções</option>
+            <option value="all">Todas</option>
+          </select>
+        </label>
+        <label>Texto atual<textarea id="manualTextOriginal" rows="2" placeholder="Cole exatamente o texto que aparece no site"></textarea></label>
+        <label>Novo texto<textarea id="manualTextReplacement" rows="2" placeholder="Digite o novo texto"></textarea></label>
+        <button id="confirmTextOverrideBtn" class="primary" type="button">Adicionar</button>
+      </div>
+
+      <div class="catalog-summary">
+        <strong id="textCatalogCount">Carregando catálogo...</strong>
+        <span>Textos do checkout gerados por JavaScript também entram nesta lista.</span>
+      </div>
+      <div id="textOverrideList" class="text-override-list"></div>
+      <button id="showMoreTextsBtn" class="ghost show-more" type="button" hidden>Mostrar mais textos</button>
     </section>
 
     <section id="payments" class="panel">

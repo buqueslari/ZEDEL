@@ -88,6 +88,7 @@ const defaultData = {
       footerText: "Digitos Â© 2025/2026 | Todos os direitos reservados",
       receiptBrand: "Digitos"
     },
+    textOverrides: [],
     payment: {
       mode: "manual",
       manualPixCode: "PIX-DEMONSTRACAO-LOCAL-SEM-VALOR-REAL",

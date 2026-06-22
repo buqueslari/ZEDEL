@@ -5,7 +5,21 @@ const state = {
   updatedAt: null,
   activeTab: "overview",
   database: "json-local",
+  textCatalog: [],
+  textDraft: {},
+  textLimit: 100,
+  catalogLoaded: false,
 };
+
+const textSources = [
+  { page: "store", label: "Loja", path: "/", scripts: [] },
+  { page: "checkout", label: "Checkout", path: "/pay/checkout.html", scripts: ["/pay/script.js"] },
+  { page: "privacy", label: "Privacidade", path: "/privacidade.html", scripts: [] },
+  { page: "returns", label: "Trocas e devoluções", path: "/trocas-devolucoes.html", scripts: [] },
+];
+
+const textPageLabels = Object.fromEntries(textSources.map((source) => [source.page, source.label]));
+textPageLabels.all = "Todas";
 
 const storeFields = [
   ["browserTitle", "Título da aba"],
@@ -69,7 +83,9 @@ async function loadAll() {
     state.settings = data.settings || {};
     state.updatedAt = data.updatedAt || null;
     state.database = data.database || data.state?.database || "json-local";
+    if (state.catalogLoaded) hydrateTextDraftFromSettings();
     renderAll();
+    if (!state.catalogLoaded) loadTextCatalog();
     toast("Dados carregados.");
   } catch (error) {
     toast(`Erro ao carregar: ${error.message}`, true);
@@ -116,6 +132,7 @@ function bindActions() {
   document.getElementById("saveCategoriesBtn").addEventListener("click", () => runSaveAction(saveCategories));
   document.getElementById("saveStoreBtn").addEventListener("click", () => runSaveAction(() => saveSettingsSection("store", readNamedForm("storeForm"))));
   document.getElementById("saveCheckoutBtn").addEventListener("click", () => runSaveAction(() => saveSettingsSection("checkout", readNamedForm("checkoutFormAdmin"))));
+  document.getElementById("saveTextOverridesBtn").addEventListener("click", () => runSaveAction(saveTextOverrides));
   document.getElementById("savePaymentBtn").addEventListener("click", () => runSaveAction(savePayment));
   document.getElementById("saveMarketingBtn").addEventListener("click", () => runSaveAction(() => saveSettingsSection("marketing", readMarketingForm())));
   document.getElementById("saveSupabaseBtn").addEventListener("click", () => runSaveAction(() => saveSettingsSection("supabase", readSupabaseForm())));
@@ -123,6 +140,20 @@ function bindActions() {
   document.getElementById("addCategoryBtn").addEventListener("click", addCategory);
   document.getElementById("productSearch").addEventListener("input", renderProducts);
   document.getElementById("productCategoryFilter").addEventListener("change", renderProducts);
+  document.getElementById("textSearch").addEventListener("input", resetTextCatalogView);
+  document.getElementById("textPageFilter").addEventListener("change", resetTextCatalogView);
+  document.getElementById("textChangedOnly").addEventListener("change", resetTextCatalogView);
+  document.getElementById("showMoreTextsBtn").addEventListener("click", () => {
+    state.textLimit += 100;
+    renderUniversalTextEditor();
+  });
+  document.getElementById("addTextOverrideBtn").addEventListener("click", () => {
+    const form = document.getElementById("manualTextOverride");
+    form.hidden = !form.hidden;
+  });
+  document.getElementById("confirmTextOverrideBtn").addEventListener("click", addManualTextOverride);
+  document.getElementById("textOverrideList").addEventListener("input", handleTextDraftInput);
+  document.getElementById("textOverrideList").addEventListener("click", handleTextDraftClick);
 }
 
 async function runSaveAction(action) {
@@ -141,6 +172,7 @@ function renderAll() {
   renderCategories();
   renderTextForm("storeForm", storeFields, state.settings.store || {});
   renderTextForm("checkoutFormAdmin", checkoutFields, state.settings.checkout || {});
+  renderUniversalTextEditor();
   renderPaymentForm();
   renderMarketingForm();
   renderSupabaseForm();
@@ -245,6 +277,273 @@ function renderTextForm(formId, fields, values) {
       return `<label>${label}<input name="${name}" value="${escapeAttr(value)}"></label>`;
     })
     .join("");
+}
+
+async function loadTextCatalog() {
+  const catalog = new Map();
+
+  try {
+    await Promise.all(textSources.map(async (source) => {
+      const response = await fetch(`${source.path}${source.path.includes("?") ? "&" : "?"}_=${Date.now()}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(`${source.label}: HTTP ${response.status}`);
+      const html = await response.text();
+      const documentCopy = new DOMParser().parseFromString(html, "text/html");
+      collectDocumentTexts(documentCopy, source.page, "Página", catalog);
+      if (source.page === "checkout") {
+        documentCopy.querySelectorAll("script:not([src])").forEach((script) => {
+          extractScriptTexts(script.textContent || "", source.page, catalog);
+        });
+      }
+
+      await Promise.all(source.scripts.map(async (scriptPath) => {
+        const scriptResponse = await fetch(`${scriptPath}?_=${Date.now()}`, { cache: "no-store" });
+        if (!scriptResponse.ok) return;
+        extractScriptTexts(await scriptResponse.text(), source.page, catalog);
+      }));
+    }));
+
+    Object.values(state.settings.store || {}).forEach((value) => addCatalogValue(catalog, "store", value, "Configuração atual"));
+    Object.values(state.settings.checkout || {}).forEach((value) => addCatalogValue(catalog, "checkout", value, "Configuração atual"));
+    (state.settings.textOverrides || []).forEach((entry) => {
+      addCatalogValue(catalog, entry.page || "all", entry.original, "Adicionado manualmente", true);
+    });
+
+    const pageOrder = ["store", "checkout", "privacy", "returns", "all"];
+    state.textCatalog = [...catalog.values()].sort((a, b) => {
+      const pageDifference = pageOrder.indexOf(a.page) - pageOrder.indexOf(b.page);
+      return pageDifference || a.original.localeCompare(b.original, "pt-BR");
+    });
+    state.catalogLoaded = true;
+    hydrateTextDraftFromSettings();
+    renderUniversalTextEditor();
+  } catch (error) {
+    document.getElementById("textCatalogCount").textContent = `Erro ao montar catálogo: ${error.message}`;
+  }
+}
+
+function collectDocumentTexts(documentCopy, page, origin, catalog) {
+  addCatalogValue(catalog, page, documentCopy.title, "Título da aba");
+
+  const ignoredTags = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE", "SVG", "OPTION"]);
+  const walker = documentCopy.createTreeWalker(documentCopy.body, NodeFilter.SHOW_TEXT);
+  let node = walker.nextNode();
+  while (node) {
+    if (!ignoredTags.has(node.parentElement?.tagName)) {
+      addCatalogValue(catalog, page, node.nodeValue, origin);
+    }
+    node = walker.nextNode();
+  }
+
+  documentCopy.querySelectorAll("[placeholder], [title], [aria-label], [alt]").forEach((element) => {
+    ["placeholder", "title", "aria-label", "alt"].forEach((attribute) => {
+      if (element.hasAttribute(attribute)) {
+        addCatalogValue(catalog, page, element.getAttribute(attribute), `Atributo ${attribute}`);
+      }
+    });
+  });
+}
+
+function extractScriptTexts(source, page, catalog) {
+  const literalPattern = /(["'`])((?:\\[\s\S]|(?!\1)[\s\S])*?)\1/g;
+  for (const match of source.matchAll(literalPattern)) {
+    const quote = match[1];
+    const raw = match[2];
+
+    if (quote === "`" && raw.includes("<")) {
+      const templateHtml = raw.replace(/\$\{[\s\S]*?\}/g, " ");
+      const templateDocument = new DOMParser().parseFromString(templateHtml, "text/html");
+      collectDocumentTexts(templateDocument, page, "Tela dinâmica", catalog);
+    }
+
+    raw.split(/\$\{[\s\S]*?\}/g).forEach((part) => {
+      const value = decodeScriptText(part);
+      if (isLikelyVisibleText(value)) addCatalogValue(catalog, page, value, "Mensagem dinâmica");
+    });
+  }
+}
+
+function decodeScriptText(value) {
+  return String(value || "")
+    .replace(/\\n/g, " ")
+    .replace(/\\r/g, " ")
+    .replace(/\\t/g, " ")
+    .replace(/\\([\\'"`])/g, "$1");
+}
+
+function isLikelyVisibleText(value) {
+  const text = cleanVisibleText(value);
+  if (text.length < 2 || text.length > 400 || !/\p{L}/u.test(text)) return false;
+  if (/^(?:https?:|data:|\/|\.\/|\.\.|#|\.[a-z_-]|[a-z]+\/)/i.test(text)) return false;
+  if (/^(?:--|\$\{|["'\\\[\]])/.test(text)) return false;
+  if (/[{}<>]|\$\{|=>|===|&&|\|\||querySelector|getElementById|console\.|document\.|window\.|application\/json|node:|(?:data-|aria-|class|onclick|alt)\s*=/i.test(text)) return false;
+
+  const tokens = text.split(/\s+/);
+  if (tokens.length >= 3) {
+    const utilityTokens = tokens.filter((token) => /^(?:!?-?(?:sm:|md:|lg:|xl:)?(?:flex|grid|block|hidden|relative|absolute|fixed|items-|justify-|text-|bg-|border|rounded|shadow|hover:|focus:|p[trblxy]?-|m[trblxy]?-|w-|h-|max-|min-|gap-|space-|font-))/i.test(token));
+    if (utilityTokens.length / tokens.length >= 0.45) return false;
+  }
+  return true;
+}
+
+function addCatalogValue(catalog, page, rawValue, origin, manual = false) {
+  const original = cleanVisibleText(rawValue);
+  if (!isCatalogText(original)) return;
+  const key = `${page}\u0000${original}`;
+  if (!catalog.has(key)) {
+    catalog.set(key, {
+      id: stableTextId(key),
+      page,
+      original,
+      origin,
+      manual,
+    });
+  }
+}
+
+function isCatalogText(value) {
+  return value.length <= 1000 && isLikelyVisibleText(value);
+}
+
+function cleanVisibleText(value) {
+  return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function stableTextId(value) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `text-${(hash >>> 0).toString(36)}`;
+}
+
+function hydrateTextDraftFromSettings() {
+  state.textDraft = Object.fromEntries(state.textCatalog.map((entry) => [entry.id, entry.original]));
+  (state.settings.textOverrides || []).forEach((override) => {
+    const entry = state.textCatalog.find((item) => item.page === (override.page || "all") && item.original === cleanVisibleText(override.original));
+    if (entry) state.textDraft[entry.id] = String(override.replacement ?? "");
+  });
+}
+
+function renderUniversalTextEditor() {
+  const list = document.getElementById("textOverrideList");
+  if (!list) return;
+  if (!state.catalogLoaded) {
+    list.innerHTML = '<p class="empty-catalog">Lendo todos os textos do site e do checkout...</p>';
+    return;
+  }
+
+  const filtered = getFilteredTextCatalog();
+  const visible = filtered.slice(0, state.textLimit);
+  const changedCount = state.textCatalog.filter((entry) => currentTextDraft(entry) !== entry.original).length;
+  document.getElementById("textCatalogCount").textContent = `${filtered.length} textos encontrados • ${changedCount} alterados`;
+
+  list.innerHTML = visible.length ? visible.map((entry) => {
+    const replacement = currentTextDraft(entry);
+    const changed = replacement !== entry.original;
+    return `
+      <article class="text-override-row ${changed ? "changed" : ""}" data-text-id="${entry.id}">
+        <span class="page-badge">${escapeHtml(textPageLabels[entry.page] || entry.page)}</span>
+        <div class="text-origin"><span>Texto atual</span><p>${escapeHtml(entry.original)}</p></div>
+        <label class="text-replacement"><span>Novo texto</span><textarea rows="2" data-text-input="${entry.id}">${escapeHtml(replacement)}</textarea></label>
+        <button class="ghost reset-text" type="button" data-reset-text="${entry.id}" title="Restaurar texto original" aria-label="Restaurar texto original"><i data-lucide="undo-2"></i></button>
+      </article>`;
+  }).join("") : '<p class="empty-catalog">Nenhum texto corresponde a este filtro.</p>';
+
+  const showMore = document.getElementById("showMoreTextsBtn");
+  showMore.hidden = visible.length >= filtered.length;
+  if (!showMore.hidden) showMore.textContent = `Mostrar mais (${filtered.length - visible.length} restantes)`;
+  window.lucide?.createIcons();
+}
+
+function getFilteredTextCatalog() {
+  const query = normalize(document.getElementById("textSearch")?.value || "");
+  const page = document.getElementById("textPageFilter")?.value || "";
+  const changedOnly = Boolean(document.getElementById("textChangedOnly")?.checked);
+  return state.textCatalog.filter((entry) => {
+    if (page && entry.page !== page && entry.page !== "all") return false;
+    if (changedOnly && currentTextDraft(entry) === entry.original) return false;
+    return !query || normalize(`${entry.original} ${currentTextDraft(entry)} ${textPageLabels[entry.page] || entry.page}`).includes(query);
+  });
+}
+
+function currentTextDraft(entry) {
+  return Object.prototype.hasOwnProperty.call(state.textDraft, entry.id) ? state.textDraft[entry.id] : entry.original;
+}
+
+function resetTextCatalogView() {
+  state.textLimit = 100;
+  renderUniversalTextEditor();
+}
+
+function handleTextDraftInput(event) {
+  const input = event.target.closest("[data-text-input]");
+  if (!input) return;
+  const entry = state.textCatalog.find((item) => item.id === input.dataset.textInput);
+  if (!entry) return;
+  state.textDraft[entry.id] = input.value;
+  input.closest(".text-override-row")?.classList.toggle("changed", input.value !== entry.original);
+  const changedCount = state.textCatalog.filter((item) => currentTextDraft(item) !== item.original).length;
+  const filteredCount = getFilteredTextCatalog().length;
+  document.getElementById("textCatalogCount").textContent = `${filteredCount} textos encontrados • ${changedCount} alterados`;
+}
+
+function handleTextDraftClick(event) {
+  const button = event.target.closest("[data-reset-text]");
+  if (!button) return;
+  const entry = state.textCatalog.find((item) => item.id === button.dataset.resetText);
+  if (!entry) return;
+  state.textDraft[entry.id] = entry.original;
+  renderUniversalTextEditor();
+}
+
+function addManualTextOverride() {
+  const page = document.getElementById("manualTextPage").value;
+  const originalInput = document.getElementById("manualTextOriginal");
+  const replacementInput = document.getElementById("manualTextReplacement");
+  const original = cleanVisibleText(originalInput.value);
+  if (!original) {
+    toast("Informe o texto atual que aparece no site.", true);
+    return;
+  }
+
+  let entry = state.textCatalog.find((item) => item.page === page && item.original === original);
+  if (!entry) {
+    entry = { id: stableTextId(`${page}\u0000${original}`), page, original, origin: "Adicionado manualmente", manual: true };
+    state.textCatalog.push(entry);
+  }
+  state.textDraft[entry.id] = replacementInput.value;
+  originalInput.value = "";
+  replacementInput.value = "";
+  document.getElementById("manualTextOverride").hidden = true;
+  document.getElementById("textPageFilter").value = page === "all" ? "" : page;
+  document.getElementById("textSearch").value = original;
+  resetTextCatalogView();
+  toast("Texto adicionado. Clique em salvar todos os textos.");
+}
+
+function collectTextOverrides() {
+  return state.textCatalog
+    .filter((entry) => currentTextDraft(entry) !== entry.original)
+    .map((entry) => ({
+      id: entry.id,
+      page: entry.page,
+      original: entry.original,
+      replacement: currentTextDraft(entry),
+    }));
+}
+
+async function saveTextOverrides() {
+  const overrides = collectTextOverrides();
+  const data = await api("/api/settings", {
+    method: "PUT",
+    body: JSON.stringify({ textOverrides: overrides }),
+  });
+  state.settings = data.settings;
+  state.updatedAt = data.updatedAt;
+  hydrateTextDraftFromSettings();
+  renderUniversalTextEditor();
+  toast(`${overrides.length} alterações de texto salvas e aplicadas no site.`);
 }
 
 function renderPaymentForm() {
@@ -383,6 +682,7 @@ async function saveAll() {
   const settings = {
     store: readNamedForm("storeForm"),
     checkout: readNamedForm("checkoutFormAdmin"),
+    textOverrides: collectTextOverrides(),
     marketing: readMarketingForm(),
     supabase: readSupabaseForm(),
   };

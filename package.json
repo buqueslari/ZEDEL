@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check private-admin/admin.js && node --check pay/script.js && node --check assets/js/site-settings.js"
+    "check": "node --check server.js && node --check private-admin/admin.js && node --check pay/script.js && node --check assets/js/site-settings.js && node --check assets/js/main.js"
   },
   "dependencies": {
     "@vercel/functions": "^3.6.2"
