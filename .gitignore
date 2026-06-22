@@ -1,0 +1,14 @@
+﻿.env.local
+server.out.log
+server.err.log
+.vercel
+
+node_modules/
+.env
+.env.local
+.vercel/
+server.err
+server.out
+*.log
+dist/
+build/

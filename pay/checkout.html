@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finalizar Pedido - Delivery do Z Express</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SweetAlert2 for better alerts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Leaflet.js for Interactive Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-slate-50">
+
+    <div>
+        <!-- Header -->
+        <header class="bg-theme-primary shadow-lg">
+            <div class="max-w-xl mx-auto px-4 py-3 flex justify-start items-center">
+                <!-- [ATUALIZADO] Cor do texto alterada para branco -->
+                <a class='flex items-center gap-3 text-white hover:text-amber-200 transition-colors' href='/'>
+                    <img src="../logo-ze.png"
+                        alt="Logo Delivery do Z Express" class="h-20 w-20 rounded-md border-0 border-amber-400">
+                    <span class="font-semibold">Z Express</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- [ATUALIZADO] Barra de avisos com gradiente -->
+        <div id="checkout-notice" class="bg-gradient-to-r from-amber-600 to-amber-500 text-white text-center py-2 text-sm font-semibold">
+            Sua bebida sempre gelada, com entrega super rápida! 🍻
+        </div>
+
+        <!-- Progress Bar Container -->
+        <div id="progress-bar-container" class="pt-6 pb-2">
+            <div id="progress-bar" class="max-w-md mx-auto px-4">
+                <div class="flex items-center text-sm">
+                    <div id="step-1" class="step-active flex items-center gap-2">
+                        <span class="step-dot bg-theme-primary text-white">1</span>
+                        <span>Identificação</span>
+                    </div>
+                    <div class="flex-grow h-px bg-slate-200 mx-2"></div>
+                    <div id="step-2" class="step-inactive flex items-center gap-2">
+                        <span class="step-dot bg-slate-300 text-slate-600">2</span>
+                        <span>Endereço</span>
+                    </div>
+                    <div class="flex-grow h-px bg-slate-200 mx-2"></div>
+                    <div id="step-3" class="step-inactive flex items-center gap-2">
+                        <span class="step-dot bg-slate-300 text-slate-600">3</span>
+                        <span>Pagamento</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <main class="max-w-xl mx-auto p-4 pb-10">
+
+        <form id="checkoutForm" class="flex flex-col gap-6">
+
+            <!-- 1. Bloco do Resumo do Pedido (Colapsável) -->
+            <section id="summarySection" class="bg-white rounded-xl border border-slate-200">
+                <div id="summaryToggle" class="p-4 cursor-pointer flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-theme-primary" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span id="summaryToggleText" class="font-semibold text-slate-800">Mostrar resumo do
+                            pedido</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="collapsible-bar-total" class="font-bold text-slate-800">R$ 0,00</span>
+                        <svg id="summaryChevron" xmlns="http://www.w3.org/2000/svg"
+                            class="h-5 w-5 text-slate-500 transition-transform" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
+
+                <div id="summaryContent" class="collapsible-content px-4 sm:px-6">
+                    <div id="summary-items-container" class="space-y-4 border-t border-slate-200 pt-4">
+                        <!-- Itens do carrinho serão injetados aqui pelo script.js -->
+                    </div>
+                    <div class="border-t border-slate-200 pt-4 mt-4 space-y-2 text-slate-600">
+                        <div class="flex justify-between items-center">
+                            <span>Subtotal</span>
+                            <span id="summary-subtotal">R$ 0,00</span>
+                        </div>
+                        <div id="summary-discount-row" class="flex justify-between items-center text-green-600 hidden">
+                            <span>Cupom Primeira Compra</span>
+                            <span id="summary-discount">- R$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span>Frete</span>
+                            <span id="summary-shipping">Grátis</span>
+                        </div>
+                        <div class="flex justify-between items-center font-bold text-slate-800 text-lg pt-2">
+                            <span>Total</span>
+                            <span id="summary-total">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. Bloco de Dados e Endereço -->
+            <section id="addressStep" class="bg-white p-6 rounded-xl border border-slate-200">
+                <h2 id="checkout-details-title" class="text-xl font-bold text-slate-800 mb-5">Detalhes de entrega</h2>
+                <div class="space-y-5">
+                    <!-- Dados Pessoais -->
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-slate-700 mb-1">Nome Completo</label>
+                        <input type="text" id="name" name="name"
+                            class="block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 text-base"
+                            required>
+                    </div>
+                    <div>
+                        <label for="phone" class="block text-sm font-medium text-slate-700 mb-1">Telefone
+                            (WhatsApp)</label>
+                        <input type="tel" id="phone" name="phone" placeholder="(00) 00000-0000"
+                            class="block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 text-base"
+                            required>
+                    </div>
+
+                    <!-- Separador -->
+                    <div class="flex items-center pt-2">
+                        <div class="flex-grow h-px bg-slate-200"></div>
+                        <span class="px-3 text-slate-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </span>
+                        <div class="flex-grow h-px bg-slate-200"></div>
+                    </div>
+
+                    <!-- Endereço -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="col-span-1 relative">
+                            <label for="cep" class="block text-sm font-medium text-slate-700 mb-1">CEP</label>
+                            <input type="text" id="cep" name="cep"
+                                class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base" required
+                                maxlength="9">
+                        </div>
+                        <div class="col-span-2">
+                            <label for="street" class="block text-sm font-medium text-slate-700 mb-1">Rua</label>
+                            <input type="text" id="street" name="street"
+                                class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base" required>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="col-span-1">
+                            <label for="number" class="block text-sm font-medium text-slate-700 mb-1">Número</label>
+                            <input type="text" id="number" name="number"
+                                class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base" required>
+                        </div>
+                        <div class="col-span-2">
+                            <label for="neighborhood"
+                                class="block text-sm font-medium text-slate-700 mb-1">Bairro</label>
+                            <input type="text" id="neighborhood" name="neighborhood"
+                                class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base" required>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="col-span-2">
+                            <label for="city" class="block text-sm font-medium text-slate-700 mb-1">Cidade</label>
+                            <input type="text" id="city" name="city"
+                                class="block w-full border border-slate-300 rounded-lg py-2 px-3 bg-slate-100 text-base"
+                                readonly required>
+                        </div>
+                        <div class="col-span-1">
+                            <label for="state" class="block text-sm font-medium text-slate-700 mb-1">Estado</label>
+                            <input type="text" id="state" name="state"
+                                class="block w-full border border-slate-300 rounded-lg py-2 px-3 bg-slate-100 text-base"
+                                readonly required>
+                        </div>
+                    </div>
+                    <p id="cep-error" class="text-xs text-red-600 hidden -mt-3">CEP não encontrado.</p>
+
+                    <!-- Botão para continuar -->
+                    <div class="pt-4">
+                        <button id="findDriverButton" type="button"
+                            class="whitespace-nowrap transition-colors bg-theme-primary text-white font-bold text-base shadow hover:bg-theme-primary-dark px-4 py-2 w-full h-14 mt-2 flex justify-center items-center relative z-10 rounded-lg">
+                            Confirmar endereço
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. Bloco de Pagamento (escondido inicialmente) -->
+            <section id="paymentStep" class="hidden">
+                <div class="bg-white p-6 rounded-xl border border-slate-200">
+                    <h2 id="checkout-payment-title" class="text-xl font-bold text-slate-800 mb-5">Escolha como pagar</h2>
+                    <div class="space-y-3">
+
+                        <!-- Opção PIX -->
+                        <div id="pixOption" class="payment-option border rounded-lg cursor-pointer">
+                            <div class="p-4 flex justify-between items-center">
+                                <div class="flex items-center gap-3">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <g clip-path="url(#clip0_4004_11336)">
+                                            <path
+                                                d="M4.04065 4.69981L4.40147 4.33907L4.04065 4.69981ZM5.16368 4.28406L8.205 1.24341L8.20502 1.24338C8.68104 0.767401 9.32664 0.5 9.99981 0.5C10.673 0.5 11.3186 0.767395 11.7946 1.24337C11.7946 1.24337 11.7946 1.24338 11.7946 1.24338L14.7867 4.23547C14.5312 4.27803 14.2808 4.34956 14.0404 4.44908C13.623 4.62186 13.244 4.8756 12.9252 5.19563C12.925 5.19582 12.9248 5.19601 12.9247 5.1962L9.91516 8.20653C9.91511 8.20658 9.91506 8.20663 9.91501 8.20668C9.90409 8.21749 9.88935 8.22355 9.87398 8.22355C9.85861 8.22355 9.84386 8.21748 9.83294 8.20667C9.8329 8.20662 9.83285 8.20657 9.8328 8.20653L6.83428 5.20801C6.83416 5.20788 6.83403 5.20776 6.8339 5.20763C6.51515 4.88732 6.1361 4.63335 5.71863 4.46037C5.53856 4.38575 5.35289 4.32685 5.16368 4.28406ZM1.24338 8.20502L1.24343 8.20497L3.36531 6.08231H4.40085C4.81352 6.08357 5.20908 6.24734 5.50187 6.53815C5.50202 6.53829 5.50217 6.53844 5.50232 6.53859L8.50126 9.53754L8.50178 9.53805C8.7168 9.75244 8.97685 9.9113 9.25965 10.0054C8.98171 10.0962 8.7249 10.2485 8.50962 10.4539L8.50952 10.4538L8.50126 10.4621L5.50232 13.461C5.50212 13.4612 5.50193 13.4614 5.50173 13.4616C5.20896 13.7523 4.81345 13.9161 4.40085 13.9173H3.36609L1.24338 11.7946C1.24338 11.7946 1.24337 11.7946 1.24337 11.7946C0.767395 11.3186 0.5 10.673 0.5 9.99981C0.5 9.32665 0.767401 8.68104 1.24338 8.20502ZM11.2367 10.4539C11.0213 10.2484 10.7643 10.0961 10.4862 10.0053C10.7689 9.91114 11.0288 9.75234 11.2437 9.53805L11.2442 9.53758L14.2551 6.5275C14.2552 6.52741 14.2553 6.52732 14.2553 6.52723C14.548 6.23604 14.9436 6.07199 15.3564 6.07065H16.621L18.7554 8.20502C18.7554 8.20502 18.7554 8.20503 18.7554 8.20504C19.2314 8.68106 19.4988 9.32665 19.4988 9.99981C19.4988 10.673 19.2314 11.3186 18.7554 11.7946C18.7554 11.7946 18.7554 11.7946 18.7554 11.7946L16.6219 13.9281H15.3562C14.9436 13.927 14.5482 13.7633 14.2555 13.4725C14.2553 13.4723 14.2551 13.4721 14.2549 13.4719L11.245 10.4621L11.2451 10.462L11.2367 10.4539ZM8.20492 18.757L5.16424 15.7156C5.35316 15.6729 5.53856 15.6141 5.71838 15.5397C6.13575 15.3669 6.51477 15.1132 6.83356 14.7932C6.83376 14.793 6.83395 14.7928 6.83414 14.7926L9.82766 11.7991C9.84042 11.7878 9.85689 11.7816 9.87398 11.7816C9.89107 11.7816 9.90754 11.7878 9.92031 11.7991L12.9246 14.8034C12.9248 14.8035 12.9249 14.8037 12.925 14.8038C13.2438 15.124 13.6229 15.3778 14.0404 15.5506C14.281 15.6502 14.5317 15.7218 14.7874 15.7643L11.7947 18.757C11.7947 18.757 11.7946 18.7571 11.7946 18.7571C11.3185 19.2329 10.6729 19.5001 9.99981 19.5001C9.32674 19.5001 8.6812 19.2329 8.20507 18.7571C8.20502 18.7571 8.20497 18.757 8.20492 18.757ZM15.3571 15.8106H15.4481L12.1481 19.1106L15.3571 15.8106Z"
+                                                stroke="currentColor"></path>
+                                        </g>
+                                        <defs>
+                                            <clipPath id="clip0_4004_11336">
+                                                <rect width="20" height="20" fill="white"></rect>
+                                            </clipPath>
+                                        </defs>
+                                    </svg>
+                                    <span class="font-semibold text-slate-800">PIX</span>
+                                </div>
+                                <div
+                                    class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-800">
+                                    Aprovação Imediata</div>
+                            </div>
+                            <div class="payment-option-content px-4 pb-4">
+                                <div class="gap-y-4 flex flex-col p-4 rounded-lg bg-slate-50 border border-slate-200">
+                                    <p class="text-slate-500 text-sm">Após clicar em 'Finalizar compra' você terá 10
+                                        minutos para pagar. A confirmação é instantânea.</p>
+                                    <div>
+                                        <label class="font-medium text-sm" for="document">CPF</label>
+                                        <div class="mt-1 relative">
+                                            <input
+                                                class="flex h-12 border border-slate-300 px-3 py-1 shadow-sm w-full rounded-lg text-base"
+                                                id="document" name="document" placeholder="000.000.000-00" type="text"
+                                                required>
+                                        </div>
+                                    </div>
+                                    <script>
+function validarCPF(cpf) {
+    cpf = cpf.replace(/[^\d]+/g,''); // remove tudo que não for número
+
+    if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+
+    let soma = 0;
+    let resto;
+
+    // Valida 1º dígito
+    for (let i = 1; i <= 9; i++) {
+        soma += parseInt(cpf.substring(i-1, i)) * (11 - i);
+    }
+    resto = (soma * 10) % 11;
+
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf.substring(9, 10))) return false;
+
+    // Valida 2º dígito
+    soma = 0;
+    for (let i = 1; i <= 10; i++) {
+        soma += parseInt(cpf.substring(i-1, i)) * (12 - i);
+    }
+    resto = (soma * 10) % 11;
+
+    if (resto === 10 || resto === 11) resto = 0;
+    if (resto !== parseInt(cpf.substring(10, 11))) return false;
+
+    return true;
+}
+</script>
+                                    <p class="font-bold text-theme-primary text-lg">Valor no Pix: <span
+                                            id="pix-total">R$ 0,00</span></p>
+                                    <button id="mainPayButton"
+                                        class="whitespace-nowrap transition-colors bg-theme-primary text-white font-bold text-base shadow hover:bg-theme-primary-dark px-4 py-2 w-full h-14 mt-2 flex justify-center items-center rounded-lg"
+                                        type="button">
+                                        <span id="mainPayButtonText">Finalizar Compra com PIX</span>
+                                        <div id="mainPayButtonSpinner" class="spinner w-6 h-6 rounded-full hidden">
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Opção Cartão de Crédito -->
+                        <div id="creditCardOption" class="payment-option border rounded-lg cursor-pointer">
+                            <div class="p-4 flex justify-between items-center">
+                                <div class="flex items-center gap-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                                        <line x1="2" y1="10" x2="22" y2="10"></line>
+                                    </svg>
+                                    <span class="font-semibold text-slate-800">Cartão de Crédito</span>
+                                </div>
+                            </div>
+                            <div class="payment-option-content px-4 pb-4">
+                                <!-- Cartão Visual -->
+                                <div class="credit-card-visual" id="creditCardVisual">
+                                    <div class="credit-card-inner">
+                                        <div class="credit-card-front">
+                                            <div>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"
+                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                    class="opacity-70">
+                                                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                                    <line x1="1" y1="10" x2="23" y2="10"></line>
+                                                </svg>
+                                            </div>
+                                            <div class="text-2xl tracking-widest" id="visualCardNumber">#### #### #### ####</div>
+                                            <div class="flex justify-between items-end">
+                                                <div class="text-sm">
+                                                    <div class="text-xs opacity-70">NOME</div>
+                                                    <div id="visualCardName">NOME DO TITULAR</div>
+                                                </div>
+                                                <div class="text-sm text-right">
+                                                    <div class="text-xs opacity-70">VALIDADE</div>
+                                                    <div id="visualCardExpiry">MM/AA</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="credit-card-back">
+                                            <div class="card-black-strip"></div>
+                                            <div class="card-cvv-box">
+                                                <span id="visualCardCvv"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Formulário do Cartão -->
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="cardNumber" class="block text-sm font-medium text-slate-700 mb-1">Número do Cartão</label>
+                                        <input type="tel" id="cardNumber"
+                                            class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base"
+                                            maxlength="19" placeholder="0000 0000 0000 0000">
+                                    </div>
+                                    <div>
+                                        <label for="cardName" class="block text-sm font-medium text-slate-700 mb-1">Nome do Titular</label>
+                                        <input type="text" id="cardName"
+                                            class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base"
+                                            placeholder="Como no cartão">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="cardExpiry" class="block text-sm font-medium text-slate-700 mb-1">Validade (MM/AA)</label>
+                                            <input type="tel" id="cardExpiry"
+                                                class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base"
+                                                placeholder="MM/AA" maxlength="5">
+                                        </div>
+                                        <div>
+                                            <label for="cardCvv" class="block text-sm font-medium text-slate-700 mb-1">CVV</label>
+                                            <input type="tel" id="cardCvv"
+                                                class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base"
+                                                maxlength="3" placeholder="000">
+                                        </div>
+                                    </div>
+                                    <button id="creditCardPayButton"
+                                        class="whitespace-nowrap transition-colors bg-theme-primary text-white font-bold text-base shadow hover:bg-theme-primary-dark px-4 py-2 w-full h-14 mt-2 flex justify-center items-center rounded-lg"
+                                        type="button">
+                                        <span id="creditCardPayButtonText">Pagar com Cartão</span>
+                                        <div id="creditCardPayButtonSpinner" class="spinner w-6 h-6 rounded-full hidden"></div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- [ATUALIZADO] Opção Maquininha -->
+                        <div id="posOption" class="payment-option border rounded-lg cursor-not-allowed opacity-60">
+                            <div class="p-4 flex justify-between items-center">
+                                <div class="flex items-center gap-3 text-slate-800">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M12 2H2v10h10V2z"></path>
+                                        <path d="m17.5 2.5-4.3 4.3"></path>
+                                        <path d="m22 2-5 5"></path>
+                                        <path d="M12 12H2v10h10V12z"></path>
+                                    </svg>
+                                    <span class="font-semibold">Pagar na Maquininha</span>
+                                </div>
+                                <span class="text-xs text-slate-500 font-medium">Desabilitado pelo fornecedor</span>
+                            </div>
+                        </div>
+
+                        <!-- [ATUALIZADO] Opção Dinheiro -->
+                        <div id="cashOption" class="payment-option border rounded-lg cursor-not-allowed opacity-60">
+                            <div class="p-4 flex justify-between items-center">
+                                <div class="flex items-center gap-3 text-slate-800">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                    </svg>
+                                    <span class="font-semibold">Pagar em Dinheiro</span>
+                                </div>
+                                <span class="text-xs text-slate-500 font-medium">Desabilitado pelo fornecedor</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+        </form>
+
+        <!-- Etapa de Carregamento -->
+        <section id="loadingStep" class="hidden text-center bg-white p-6 rounded-xl border border-slate-200">
+            <div class="flex flex-col items-center justify-center gap-4">
+                <div class="relative w-16 h-16">
+                    <div class="w-full h-full rounded-full bg-theme-primary opacity-25"></div>
+                    <div class="absolute inset-0 m-auto w-12 h-12 rounded-full bg-theme-primary opacity-50"></div>
+                    <div class="absolute inset-0 m-auto w-8 h-8 rounded-full bg-theme-primary pulsing-dot"></div>
+                </div>
+                <h2 id="checkout-loading-title" class="text-xl font-bold text-slate-800 mt-4">Buscando o entregador mais próximo...</h2>
+                <p id="checkout-loading-subtitle" class="text-slate-600 text-sm max-w-sm">Estamos localizando o melhor entregador para o seu endereço:
+                </p>
+                <p id="loadingAddress" class="font-semibold text-slate-700 text-sm"></p>
+            </div>
+        </section>
+
+        <!-- Etapa de Entregador Encontrado -->
+        <section id="driverFoundStep" class="hidden">
+            <div class="bg-white rounded-xl border border-slate-200">
+                <div class="p-6 text-center">
+                    <h2 id="checkout-driver-title" class="text-2xl font-bold text-slate-800">Entregador disponível!</h2>
+                    <p class="text-slate-600 mt-1">Nosso parceiro está aguardando a confirmação do pagamento.</p>
+                </div>
+                <div id="mapContainer" class="relative h-64 bg-slate-200">
+                    <!-- O mapa Leaflet será inserido aqui pelo script -->
+                </div>
+                <div class="relative p-4 sm:p-6 space-y-4">
+                    <div class="absolute -top-14 left-1/2 -translate-x-1/2 z-10">
+                        <img src="./images/dr.png" alt="Foto do entregador"
+                            class="w-28 h-28 rounded-full border-4 border-white shadow-lg">
+
+                        <!-- [NOVO] Selo de Frete Grátis -->
+                        <div class="absolute -bottom-2 -right-2 bg-gradient-to-tr from-green-500 to-green-400 text-white p-2 rounded-full shadow-md"
+                            title="Este pedido tem Frete Grátis!">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                stroke-linejoin="round" class="w-5 h-5">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="pt-10 text-center">
+                        <h3 id="driverName" class="text-xl font-bold text-slate-800">Carregando...</h3>
+                        <div class="flex items-center justify-center gap-1 text-sm text-slate-500 mt-1">
+                            <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                                </path>
+                            </svg>
+                            <span id="driverRating" class="font-semibold text-slate-600">--</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 text-center border-t border-b border-slate-200 py-4">
+                        <div>
+                            <p class="text-xs text-slate-500">Distância</p>
+                            <p id="deliveryDistance" class="font-bold text-slate-800">2.8 km</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500">Tempo Estimado</p>
+                            <p id="deliveryTime" class="font-bold text-slate-800">~11 min</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500">Veículo</p>
+                            <p id="driverCar" class="font-bold text-slate-800">Honda CG 160</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-center gap-4 text-xs text-slate-600">
+                        <div class="mercosul-plate">
+                            <div class="mercosul-header">BRASIL</div>
+                            <span id="driverPlate">RBR-8A22</span>
+                        </div>
+                        <div class="h-10 w-px bg-slate-200"></div>
+                        <div class="text-left">
+                            <p class="font-semibold text-slate-800">Distribuidor Verificado</p>
+                            <p id="distributorCnpj">CNPJ 39.xxx.xxx/0001-07</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-3 rounded-lg">
+                        <p class="text-sm font-semibold text-slate-800">Entregar em:</p>
+                        <p id="driverAddress" class="text-sm text-slate-600"></p>
+                    </div>
+
+                    <!-- Avisos sobre o mapa -->
+                    <div class="mt-4 space-y-2 text-xs text-slate-500 text-left">
+                        <div class="flex items-start gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-500">
+                                <path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z">
+                                </path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            <p>O pino no mapa é uma referência da sua rua. Fique tranquilo, nosso entregador receberá
+                                seu endereço completo com o número.</p>
+                        </div>
+                    </div>
+
+                    <button id="continueToReviewButton" type="button"
+                        class="whitespace-nowrap transition-colors bg-theme-primary text-white font-bold text-base shadow hover:bg-theme-primary-dark px-4 py-2 w-full h-14 mt-4 flex justify-center items-center rounded-lg">
+                        Continuar
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- [ATUALIZADO] ETAPA: Revisão do Pedido -->
+        <section id="reviewStep" class="hidden">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 space-y-6">
+                <div class="text-center">
+                    <div
+                        class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-theme-primary/10 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="w-6 h-6 text-theme-primary">
+                            <path d="M20 6 9 17l-5-5"></path>
+                        </svg>
+                    </div>
+                    <h2 id="checkout-review-title" class="text-2xl font-bold text-slate-800">Revisão do Pedido</h2>
+                    <p class="text-slate-500 mt-1">Confira todas as informações antes de finalizar.</p>
+                </div>
+
+                <!-- Container da Nota Fiscal -->
+                <div id="reviewReceiptContainer">
+                    <!-- O conteúdo da nota será injetado aqui pelo script.js -->
+                </div>
+                
+                <div>
+                    <p class="text-sm font-light text-slate-600 mb-2">Sua primeira vez por aqui? Toma cupom ;)</p>
+                    <p class="text-xs text-slate-500 mb-2">*Válido apenas para pedidos acima de R$ 50,00</p>
+                    <div id="coupon-container" class="coupon-wrapper">
+                        <div class="flex items-center gap-3">
+                            <!-- Ícone SVG mantido do design anterior -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="w-6 h-6 text-purple-600">
+                                <path
+                                    d="m12.47 2.2-2.24.9a.5.5 0 0 0-.23.68l.52 1.21a.5.5 0 0 1-.24.64l-1.23.5a.5.5 0 0 0-.36 1l.2 1.28a.5.5 0 0 1-.3.58l-1.29.2a.5.5 0 0 0-.42.76l.71 1.18a.5.5 0 0 1-.07.65l-1.03 1.03a.5.5 0 0 0 .36.85l1.28.2a.5.5 0 0 1 .45.51l-.2 1.28a.5.5 0 0 0 .62.48l1.24-.5a.5.5 0 0 1 .64.24l.52 1.21a.5.5 0 0 0 .68.23l2.24-.9a.5.5 0 0 0 .23-.68l-.52-1.21a.5.5 0 0 1 .24-.64l1.23-.5a.5.5 0 0 0 .36-1l-.2-1.28a.5.5 0 0 1 .3-.58l1.29-.2a.5.5 0 0 0 .42-.76l-.71-1.18a.5.5 0 0 1 .07-.65l1.03-1.03a.5.5 0 0 0-.36-.85l-1.28-.2a.5.5 0 0 1-.45-.51l.2-1.28a.5.5 0 0 0-.62-.48l-1.24.5a.5.5 0 0 1-.64-.24l-.52-1.21a.5.5 0 0 0-.68-.23Z" />
+                                <path d="M12 12 9.5 9.5" />
+                            </svg>
+                            <span id="coupon-text">Cupom de R$ 15 aqui</span>
+                        </div>
+                        <button id="coupon-button" type="button">Quero</button>
+                    </div>
+                </div>
+
+                <div class="border border-slate-200 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="font-semibold text-slate-800 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="w-5 h-5 text-theme-primary">
+                                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Endereço de Entrega
+                        </h3>
+                        <button type="button" id="editAddressBtn"
+                            class="text-sm font-semibold text-theme-primary hover:underline">Editar</button>
+                    </div>
+                    <p id="reviewAddress" class="text-sm text-slate-600 leading-relaxed"></p>
+                </div>
+
+                <!-- Campo de Complemento (opcional) -->
+                <div class="border border-slate-200 rounded-lg p-4">
+                    <label for="complement" class="font-semibold text-slate-800 flex items-center gap-2 mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" class="w-5 h-5 text-theme-primary">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                        Complemento
+                        <span class="text-xs font-normal text-slate-400">(opcional)</span>
+                    </label>
+                    <input type="text" id="complement" name="complement"
+                        placeholder="Ex: Apto 302, Bloco B, Próximo ao mercado..."
+                        class="block w-full border border-slate-300 rounded-lg shadow-sm py-2.5 px-3 text-sm text-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-theme-primary focus:border-theme-primary transition-colors">
+                    <p class="text-xs text-slate-400 mt-1.5">Ajude o entregador a encontrar seu endereço mais rápido.</p>
+                </div>
+
+                <!-- [RETORNADO] Avisos Importantes -->
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                    <h3 class="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="w-5 h-5 text-theme-primary">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        Informações importantes
+                    </h3>
+                    <ul class="text-xs text-slate-600 space-y-2 list-disc list-inside">
+                        <li>O entregador poderá entrar em contato pelo WhatsApp ou telefone informado para confirmar o
+                            endereço.</li>
+                        <li>Após a confirmação do pagamento, você receberá um e-mail com as informações da
+                            distribuidora, nota fiscal e telefone do entregador.</li>
+                        <li>Nossos entregadores não são obrigados a subir escadas em prédios.</li>
+                        <li>Confirme pelo telefone ou WhatsApp se o entregador oferece ajuda para subir com os produtos.
+                        </li>
+                    </ul>
+                </div>
+
+                <button id="goToPaymentButton" type="button"
+                    class="whitespace-nowrap transition-colors bg-theme-primary text-white font-bold text-base shadow hover:bg-theme-primary-dark px-4 py-2 w-full h-14 mt-2 flex justify-center items-center rounded-lg">
+                    Ir para o pagamento
+                </button>
+            </div>
+        </section>
+
+
+        <!-- Container do PIX (substitui a tela após o pagamento) -->
+        <div id="pixContainer" class="hidden text-center">
+            <!-- Conteúdo será inserido dinamicamente -->
+        </div>
+    </main>
+
+    <!-- Rodapé Informativo -->
+    <footer class="border-t border-slate-200 mt-0">
+        <div class="mx-auto max-w-xl lg:max-w-2xl relative px-5 py-10">
+            <div
+                class="flex justify-between items-center gap-3 text-xs text-slate-500 flex-col text-center md:flex-row md:text-left">
+                <div>
+                    <h3 class="font-bold text-slate-700">Delivery do Z Express</h3>
+                    <p id="checkout-footer-contact">Dúvidas? Entre em contato!<br>(99) 98500-5032</p>
+                </div>
+                <div>
+                    <div class="flex mt-10 md:mt-0">
+                        <div class="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="lucide lucide-lock-keyhole mr-2 size-4 md:size-5">
+                                <circle cx="12" cy="16" r="1"></circle>
+                                <rect x="3" y="10" width="18" height="12" rx="2"></rect>
+                                <path d="M7 10V7a5 5 0 0 1 10 0v3"></path>
+                            </svg>
+                            <span class="text-xs leading-[13px]">
+                                <b>PAGAMENTO</b><br> 100% SEGURO
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-5 border-slate-200/60">
+            <div class="flex justify-center items-center flex-col gap-3 text-xs text-slate-500">
+                <p id="checkout-footer-text" class="w-full text-center">
+                    Delivery do Z Express &copy; 2025/2026 | Todos os direitos reservados
+                </p>
+                <p class="w-full text-center">
+                    <a href="/privacidade.html" class="hover:text-slate-700 underline">Política de Privacidade</a>
+                    <span class="mx-1">•</span>
+                    <a href="/trocas-devolucoes.html" class="hover:text-slate-700 underline">Política de Trocas e Devoluções</a>
+                </p>
+                <p class="w-full text-center" style="font-size:0.7rem; color:#94a3b8; margin-top:0.25rem;">
+                    🔞 A venda e o consumo de bebidas alcoólicas são proibidos para menores de 18 anos. Lei nº 8.069/90 e Lei nº 9.294/96. Beba com moderação.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Custom JS -->
+    <script src="../assets/js/site-settings.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "name": "Ofertas",
+    "image_url": "./assets/images/products/heinekenlong-6x330.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Cervejas",
+    "image_url": "./assets/images/products/81-cerveja-corona-473ml.jpg"
+  },
+  {
+    "id": 3,
+    "name": "Destilados",
+    "image_url": "./assets/images/products/61-whisky-black-label-1l.jpg"
+  },
+  {
+    "id": 4,
+    "name": "Vinhos",
+    "image_url": "./assets/images/products/327-vinho-ros-piscine-750ml.jpg"
+  },
+  {
+    "id": 5,
+    "name": "Churrasco",
+    "image_url": "./assets/images/products/43-carv-o-2-5kg.jpg"
+  },
+  {
+    "id": 6,
+    "name": "Chopp",
+    "image_url": "./assets/images/products/361-chopp-de-vinho-pink-moon-600ml.jpg"
+  },
+  {
+    "id": 7,
+    "name": "Águas e Gelo",
+    "image_url": "./assets/images/products/49-saco-de-gelo-filtrado-10kg.jpg"
+  },
+  {
+    "id": 8,
+    "name": "Não alcoólicos",
+    "image_url": "./assets/images/products/227-h2o-limoneto-500ml.jpg"
+  },
+  {
+    "id": 9,
+    "name": "Drinks Prontos",
+    "image_url": "./assets/images/products/364-rum-xeque-mate-guaran-e-lim-o-355ml.jpg"
+  },
+  {
+    "id": 10,
+    "name": "Comidinhas",
+    "image_url": "./assets/images/products/390-refresco-tang-em-p-laranja.jpg"
+  },
+  {
+    "id": 11,
+    "name": "Sobremesas",
+    "image_url": "./assets/images/products/27-chocolate-baton.jpg"
+  },
+  {
+    "id": 12,
+    "name": "Mercearia",
+    "image_url": "./assets/images/products/390-refresco-tang-em-p-laranja.jpg"
+  },
+  {
+    "id": 13,
+    "name": "Conveniência",
+    "image_url": "./assets/images/products/5-copo-770ml-descart-vel.jpg"
+  },
+  {
+    "id": 15,
+    "name": "Cigarros",
+    "image_url": "./assets/images/products/9-cigarro-dunhill-double-refresh.jpg"
+  },
+  {
+    "id": 16,
+    "name": "Refrigerantes",
+    "image_url": "./assets/images/products/202-refrigerante-pepsi-cola-2l.jpg"
+  },
+  {
+    "id": 17,
+    "name": "Energéticos",
+    "image_url": "./assets/images/products/261-energ-tico-monster-473ml.jpg"
+  }
+]

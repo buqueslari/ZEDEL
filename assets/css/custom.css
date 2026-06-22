@@ -1,0 +1,91 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    scroll-behavior: smooth;
+}
+.hero-cover {
+    background-image: url('../../banner.webp');
+    background-size: cover;
+    background-position: center;
+}
+/* Scrollbar customizada */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: #fbbf24; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Estilos do Carrinho */
+#cart-content.collapsed #cart-expanded {
+    display: none;
+}
+#cart-content:not(.collapsed) #cart-collapsed {
+    display: none;
+}
+/* Estilo para o link de categoria */
+.category-link {
+    color: white;
+}
+.category-link.active {
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+/* Estilo para a categoria da grade ativa */
+.category-grid-item.active p {
+    color: #f59e0b;
+    font-weight: 700;
+}
+.category-grid-item.active div {
+    border-color: #f59e0b;
+    transform: scale(1.05);
+}
+/* Animação para destacar produto */
+@keyframes highlight {
+    0% { background-color: #fef3c7; } /* amber-100 */
+    100% { background-color: transparent; }
+}
+.highlight-product {
+    animation: highlight 2s ease-out;
+}
+
+/* =================================================================== */
+/* CÓDIGO ATUALIZADO PARA A BARRA DE PESQUISA FIXA (29/08/2025) */
+/* =================================================================== */
+#search-container.fixed-search {
+    position: fixed;
+    /* Alterado para 0 para colar no topo da tela */
+    top: 0; 
+    left: 0;
+    right: 0;
+    /* Aumentado para ficar na frente de tudo */
+    z-index: 30; 
+    
+    /* Alterado para a cor primária do site */
+    background-color: #f59e0b; 
+    
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    transform: translateY(0);
+    transition: all 0.3s ease-in-out;
+}
+
+/* Melhoria de contraste para o campo de busca quando fixo */
+#search-container.fixed-search input {
+    background-color: white;
+    border-color: #fbbf24; /* Tom de âmbar mais claro */
+}
+
+/* Classe para adicionar o espaçamento no 'main' e evitar o "pulo" do conteúdo */
+main.search-is-fixed {
+    /* A altura exata será definida via JavaScript para ser precisa */
+    padding-top: 80px; 
+}

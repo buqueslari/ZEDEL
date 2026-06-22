@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144" role="img" aria-label="Produto">
+  <rect width="144" height="144" rx="18" fill="#f3f4f6"/>
+  <circle cx="72" cy="58" r="28" fill="#f7b825"/>
+  <path d="M43 108c5-18 18-28 29-28s24 10 29 28" fill="#0b2f22"/>
+  <text x="72" y="128" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#0b2f22">Delivery</text>
+</svg>

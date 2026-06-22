@@ -1,0 +1,79 @@
+{
+  "settings": {
+    "store": {
+      "browserTitle": "Delivery do Z Express - Bebidas e Conveniência",
+      "title": "Delivery do Z Express - Sua Bebida Gelada Online",
+      "brandName": "Delivery do Z Express",
+      "deliveryTime": "Entrega em até 40 min",
+      "deliveryLabel": "Entrega Grátis",
+      "welcomeCity": "Bem-vindo!",
+      "distanceText": "1,9km de você",
+      "rating": "4,9",
+      "ratingCount": "(1.890 avaliações)",
+      "badgeText": "Super",
+      "tag1": "Bebida Gelada",
+      "tag2": "Entrega Rápida",
+      "openStatus": "ABERTO 24 HORAS",
+      "reviewsTitle": "O que nossos clientes dizem! 🌟",
+      "reviewsRecent": "412 avaliações • últimos 90 dias",
+      "reviewsTotal": "1.890 avaliações no total",
+      "footerCopyright": "Todos os direitos reservados.",
+      "responsibleWarning": "🔞 A venda e o consumo de bebidas alcoólicas são proibidos para menores de 18 anos.",
+      "searchPlaceholder": "Pesquise sua bebida favorita",
+      "cartTitle": "Seu Carrinho",
+      "cartButton": "Finalizar Pedido",
+      "cartCollapsed": "Ver meu carrinho",
+      "ageTitle": "Verificação de idade",
+      "ageDescription": "Este site vende bebidas alcoólicas.<br>Você tem <strong>18 anos ou mais?</strong>",
+      "ageAccept": "Sim, tenho 18 anos ou mais",
+      "ageReject": "Não, sou menor de idade",
+      "ageFootnote": "Ao entrar, você concorda com nossos termos de uso e confirma ter idade legal para comprar bebidas alcoólicas."
+    },
+    "checkout": {
+      "browserTitle": "Finalizar Pedido - Delivery do Z Express",
+      "headerBrand": "Z Express",
+      "notice": "Sua bebida sempre gelada, com entrega super rápida! 🍻",
+      "summaryToggle": "Mostrar resumo do pedido",
+      "detailsTitle": "Detalhes de entrega",
+      "loadingTitle": "Buscando o entregador mais próximo...",
+      "loadingSubtitle": "Estamos localizando o melhor entregador para o seu endereço:",
+      "driverFoundTitle": "Entregador disponível!",
+      "driverHint": "O entregador já está na sua região.",
+      "reviewTitle": "Revisão do Pedido",
+      "paymentTitle": "Escolha como pagar",
+      "pixButton": "Finalizar Compra com PIX",
+      "footerContact": "(99) 98500-5032",
+      "footerText": "Delivery do Z Express © 2025/2026 | Todos os direitos reservados",
+      "receiptBrand": "DELIVERY DO Z EXPRESS"
+    },
+    "payment": {
+      "mode": "blackcat",
+      "manualPixCode": "PIX-DEMONSTRACAO-LOCAL-SEM-VALOR-REAL",
+      "demoFallback": false,
+      "blackcat": {
+        "enabled": true,
+        "apiUrl": "https://api.blackcatpay.com.br/api",
+        "publicKey": "pk_live_e997d85eb2ebc4d87bdc7ce111139fb5f1f2cff02a73ca6af32740af455d0175",
+        "merchantName": "",
+        "merchantDocument": ""
+      }
+    },
+    "supabase": {
+      "enabled": false,
+      "url": "",
+      "anonKey": "",
+      "note": "Painel operando com banco JSON local. Use supabase/schema.sql para migrar."
+    },
+    "marketing": {
+      "googleAdsId": "AW-18192494319",
+      "googleAdsInput": "AW-18192494319",
+      "events": {
+        "addToCart": "",
+        "beginCheckout": "",
+        "purchase": "gtag('event', 'conversion', {\n  'send_to': 'AW-18192494319/traDCMD54sIcEO_d7eJD',\n  'value': 1.0,\n  'currency': 'BRL',\n  'transaction_id': ''\n});",
+        "pageView": "gtag('event', 'conversion', {\n  'send_to': 'AW-18192494319/XDgFCL354sIcEO_d7eJD',\n  'value': 1.0,\n  'currency': 'BRL'\n});"
+      }
+    }
+  },
+  "updatedAt": "2026-06-04T09:09:48.341Z"
+}

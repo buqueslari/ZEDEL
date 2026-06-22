@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel Admin - Delivery do Z Express</title>
+  <link rel="stylesheet" href="/admin/admin.css?v=20260620-2">
+  <script src="https://unpkg.com/lucide@latest" defer></script>
+  <script src="/admin/admin.js?v=20260620-2" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="../logo.jpeg" alt="Delivery do Z Express">
+      <div>
+        <strong>Painel Admin</strong>
+        <span>Delivery do Z Express</span>
+      </div>
+    </div>
+    <nav class="tabs" aria-label="Áreas do painel">
+      <button class="tab active" data-tab="overview"><i data-lucide="layout-dashboard"></i><span>Visão geral</span></button>
+      <button class="tab" data-tab="products"><i data-lucide="package"></i><span>Produtos</span></button>
+      <button class="tab" data-tab="categories"><i data-lucide="tags"></i><span>Categorias</span></button>
+      <button class="tab" data-tab="texts"><i data-lucide="type"></i><span>Textos da loja</span></button>
+      <button class="tab" data-tab="checkout"><i data-lucide="truck"></i><span>Checkout</span></button>
+      <button class="tab" data-tab="payments"><i data-lucide="qr-code"></i><span>Pix</span></button>
+      <button class="tab" data-tab="marketing"><i data-lucide="badge-dollar-sign"></i><span>Pixel</span></button>
+      <button class="tab" data-tab="supabase"><i data-lucide="database"></i><span>Supabase</span></button>
+    </nav>
+  </aside>
+
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <h1 id="pageTitle">Visão geral</h1>
+        <p id="updatedAt">Carregando dados...</p>
+      </div>
+      <div class="top-actions">
+        <a class="ghost" href="/" target="_blank"><i data-lucide="external-link"></i><span>Ver site</span></a>
+        <button id="reloadBtn" class="ghost"><i data-lucide="refresh-cw"></i><span>Recarregar</span></button>
+        <button id="saveAllBtn" class="primary"><i data-lucide="save"></i><span>Salvar tudo</span></button>
+      </div>
+    </header>
+
+    <div id="persistenceWarning" class="warning-banner" hidden>
+      <strong>Alterações não persistem ainda.</strong>
+      <span>Este deploy está usando JSON local. Configure o Supabase no ambiente da Vercel para salvar produtos, textos, Pix e pixel de forma permanente.</span>
+    </div>
+
+    <section id="overview" class="panel active-panel">
+      <div class="metric-grid">
+        <article class="metric"><span>Produtos</span><strong id="metricProducts">0</strong></article>
+        <article class="metric"><span>Categorias</span><strong id="metricCategories">0</strong></article>
+        <article class="metric"><span>Produtos em estoque</span><strong id="metricStock">0</strong></article>
+        <article class="metric"><span>Pix ativo</span><strong id="metricPix">Manual</strong></article>
+      </div>
+      <div class="split">
+        <section class="block">
+          <h2>Status do site</h2>
+          <div class="status-list">
+            <p><span>Banco local</span><strong>Ativo</strong></p>
+            <p><span>Banco em uso</span><strong id="overviewDatabase">Carregando</strong></p>
+            <p><span>Cache do catálogo</span><strong>Desligado</strong></p>
+            <p><span>Cartão no clone</span><strong>Desativado</strong></p>
+            <p><span>Pix</span><strong id="overviewPix">Manual</strong></p>
+          </div>
+        </section>
+        <section class="block">
+          <h2>Ações rápidas</h2>
+          <div class="quick-actions">
+            <button class="ghost" data-jump="products"><i data-lucide="package-plus"></i><span>Editar produtos</span></button>
+            <button class="ghost" data-jump="texts"><i data-lucide="type"></i><span>Alterar textos</span></button>
+            <button class="ghost" data-jump="payments"><i data-lucide="qr-code"></i><span>Configurar Pix</span></button>
+            <button class="ghost" data-jump="marketing"><i data-lucide="badge-dollar-sign"></i><span>Configurar pixel</span></button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="products" class="panel">
+      <div class="toolbar">
+        <label class="search"><i data-lucide="search"></i><input id="productSearch" placeholder="Buscar produto"></label>
+        <select id="productCategoryFilter"></select>
+        <button id="addProductBtn" class="ghost"><i data-lucide="plus"></i><span>Novo produto</span></button>
+        <button id="saveProductsBtn" class="primary"><i data-lucide="save"></i><span>Salvar produtos</span></button>
+      </div>
+      <div id="productsTable" class="table-wrap"></div>
+    </section>
+
+    <section id="categories" class="panel">
+      <div class="toolbar">
+        <button id="addCategoryBtn" class="ghost"><i data-lucide="plus"></i><span>Nova categoria</span></button>
+        <button id="saveCategoriesBtn" class="primary"><i data-lucide="save"></i><span>Salvar categorias</span></button>
+      </div>
+      <div id="categoriesTable" class="table-wrap"></div>
+    </section>
+
+    <section id="texts" class="panel">
+      <div class="form-header">
+        <h2>Textos da loja</h2>
+        <button id="saveStoreBtn" class="primary"><i data-lucide="save"></i><span>Salvar textos</span></button>
+      </div>
+      <form id="storeForm" class="form-grid"></form>
+    </section>
+
+    <section id="checkout" class="panel">
+      <div class="form-header">
+        <h2>Checkout e entregador</h2>
+        <button id="saveCheckoutBtn" class="primary"><i data-lucide="save"></i><span>Salvar checkout</span></button>
+      </div>
+      <form id="checkoutFormAdmin" class="form-grid"></form>
+    </section>
+
+    <section id="payments" class="panel">
+      <div class="form-header">
+        <h2>Pix e gateway</h2>
+        <button id="savePaymentBtn" class="primary"><i data-lucide="save"></i><span>Salvar Pix</span></button>
+      </div>
+      <form id="paymentForm" class="form-grid payment-grid">
+        <fieldset class="wide mode-box">
+          <legend>Modo de Pix</legend>
+          <label><input type="radio" name="mode" value="manual"> Pix manual</label>
+          <label><input type="radio" name="mode" value="blackcat"> Pix BlackCat</label>
+        </fieldset>
+        <label class="wide">Código Pix manual
+          <textarea name="manualPixCode" rows="5"></textarea>
+        </label>
+        <label><input name="blackcatEnabled" type="checkbox"> BlackCat habilitado</label>
+        <label><input name="demoFallback" type="checkbox"> Usar Pix manual se o BlackCat falhar</label>
+        <label class="wide">URL da API BlackCat <input name="blackcatApiUrl" placeholder="https://api.blackcatpay.com.br/api" readonly></label>
+        <label>Chave pública <input name="blackcatPublicKey"></label>
+        <label>Nome do recebedor <input name="blackcatMerchantName"></label>
+        <label>Documento do recebedor <input name="blackcatMerchantDocument"></label>
+        <p class="wide muted">A chave privada da BlackCatPay fica em <code>BLACKCATPAY_PRIVATE_KEY</code> no servidor/Vercel, fora do navegador e fora deste painel.</p>
+      </form>
+    </section>
+
+    <section id="marketing" class="panel">
+      <div class="form-header">
+        <h2>Google Ads e conversões</h2>
+        <button id="saveMarketingBtn" class="primary"><i data-lucide="save"></i><span>Salvar pixel</span></button>
+      </div>
+      <form id="marketingForm" class="form-grid">
+        <label class="wide">ID do Google Ads ou código global
+          <textarea name="googleAdsInput" rows="5" placeholder="AW-18192494319 ou o script completo do Google tag"></textarea>
+        </label>
+        <label class="wide">Evento de visualizacao de pagina
+          <textarea name="pageView" rows="4" placeholder="Cole aqui o evento conversion de visualizacao de pagina"></textarea>
+        </label>
+        <label class="wide">Evento do botão adicionar ao carrinho
+          <textarea name="addToCart" rows="4" placeholder="Cole aqui o gtag('event', ...), ou apenas AW-000000000/label"></textarea>
+        </label>
+        <label class="wide">Evento do botão finalizar pedido
+          <textarea name="beginCheckout" rows="4" placeholder="Cole aqui o evento begin_checkout ou conversion do Google Ads"></textarea>
+        </label>
+        <label class="wide">Evento de compra/Pix gerado
+          <textarea name="purchase" rows="4" placeholder="Cole aqui o evento de conversão final, por exemplo AW-000000000/label"></textarea>
+        </label>
+        <p class="wide muted">Você pode colar o snippet inteiro do Google Ads. O site identifica automaticamente o ID <code>AW-...</code> e o <code>send_to</code> do evento.</p>
+      </form>
+    </section>
+
+    <section id="supabase" class="panel">
+      <div class="form-header">
+        <h2>Supabase</h2>
+        <button id="saveSupabaseBtn" class="primary"><i data-lucide="save"></i><span>Salvar configuração</span></button>
+      </div>
+      <form id="supabaseForm" class="form-grid">
+        <label><input name="enabled" type="checkbox"> Preparado para usar Supabase</label>
+        <label>Project URL <input name="url" placeholder="https://xxxx.supabase.co"></label>
+        <label class="wide">Anon key <textarea name="anonKey" rows="4"></textarea></label>
+        <label class="wide">Observação <textarea name="note" rows="3"></textarea></label>
+      </form>
+      <div class="block mt">
+        <h2>Schema pronto</h2>
+        <p class="muted">O arquivo <code>supabase/schema.sql</code> já separa dados públicos de configurações privadas de pagamento. Não exponha service role no navegador.</p>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
