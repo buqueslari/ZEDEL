@@ -13,7 +13,7 @@ const state = {
 
 const textSources = [
   { page: "store", label: "Loja", path: "/", scripts: [] },
-  { page: "checkout", label: "Checkout", path: "/pay/checkout.html", scripts: ["/pay/script.js"] },
+  { page: "checkout", label: "Etapa", path: "/etapa/", scripts: ["/etapa/script.js"] },
   { page: "privacy", label: "Privacidade", path: "/privacidade.html", scripts: [] },
   { page: "returns", label: "Trocas e devoluções", path: "/trocas-devolucoes.html", scripts: [] },
 ];

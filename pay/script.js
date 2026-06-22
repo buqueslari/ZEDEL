@@ -810,9 +810,10 @@ async function handlePayment(paymentMethod) {
 function displayPixScreen(paymentData) {
     clearInterval(pixTimerInterval);
     document.getElementById('checkoutForm').classList.add('hidden');
-    document.getElementById('driverFoundStep').classList.add('hidden');
+    document.getElementById('driverFoundStep')?.classList.add('hidden');
     document.getElementById('summarySection').classList.add('hidden');
     const pixContainer = document.getElementById('pixContainer');
+    if (!pixContainer) throw new Error('Tela de confirmação indisponível.');
     pixContainer.classList.remove('hidden');
 
     const subtotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -1790,17 +1791,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cpfInput = document.getElementById('document');
     const phoneInput = document.getElementById('phone');
 
-    findDriverButton.addEventListener('click', () => {
+    findDriverButton?.addEventListener('click', () => {
         if ([...addressStep.querySelectorAll('input[required]')].every(field => field.checkValidity())) {
-            showLoadingAndDriverSearch();
+            if (document.getElementById('loadingStep')) {
+                showLoadingAndDriverSearch();
+            } else {
+                addressStep.classList.add('hidden');
+                paymentStep?.classList.remove('hidden');
+                updateProgressBar(3);
+                document.getElementById('document')?.focus();
+                window.scrollTo(0, 0);
+            }
         } else {
             checkoutForm.reportValidity();
         }
     });
 
-    continueToReviewButton.addEventListener('click', showReviewStep);
+    continueToReviewButton?.addEventListener('click', showReviewStep);
 
-    editAddressBtn.addEventListener('click', () => {
+    editAddressBtn?.addEventListener('click', () => {
         reviewStep.classList.add('hidden');
         checkoutForm.classList.remove('hidden');
         addressStep.classList.remove('hidden');
@@ -1809,7 +1818,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.scrollTo(0, 0);
     });
 
-    goToPaymentButton.addEventListener('click', () => {
+    goToPaymentButton?.addEventListener('click', () => {
         reviewStep.classList.add('hidden');
         checkoutForm.classList.remove('hidden');
         addressStep.classList.add('hidden');
@@ -1847,15 +1856,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    mainPayButton.addEventListener('click', () => handlePayment('pix'));
+    mainPayButton?.addEventListener('click', () => {
+        if (!checkoutForm.checkValidity()) {
+            checkoutForm.reportValidity();
+            return;
+        }
+        handlePayment('pix');
+    });
     if (creditCardPayButton) {
         creditCardPayButton.addEventListener('click', () => handlePayment('credit_card'));
     }
 
     // Máscaras de Input
-    cepInput.addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, '').replace(/^(\d{5})(\d)/, '$1-$2'); });
-    cpfInput.addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'); });
-    phoneInput.addEventListener('input', (e) => {
+    cepInput?.addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, '').replace(/^(\d{5})(\d)/, '$1-$2'); });
+    cpfInput?.addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'); });
+    phoneInput?.addEventListener('input', (e) => {
         let v = e.target.value.replace(/\D/g, '');
         v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
         v = v.replace(/(\d)(\d{4})$/, "$1-$2");

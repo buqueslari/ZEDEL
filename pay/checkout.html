@@ -61,7 +61,7 @@
                     <div class="flex-grow h-px bg-slate-200 mx-2"></div>
                     <div id="step-3" class="step-inactive flex items-center gap-2">
                         <span class="step-dot bg-slate-300 text-slate-600">3</span>
-                        <span>Digitos</span>
+                        <span>Pagamento</span>
                     </div>
                 </div>
             </div>
@@ -82,7 +82,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
-                        <span id="summaryToggleText" class="font-semibold text-slate-800">Mostrar resumo dos digitos</span>
+                        <span id="summaryToggleText" class="font-semibold text-slate-800">Mostrar resumo do pedido</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span id="collapsible-bar-total" class="font-bold text-slate-800"></span>
@@ -100,19 +100,19 @@
                     </div>
                     <div class="border-t border-slate-200 pt-4 mt-4 space-y-2 text-slate-600">
                         <div class="flex justify-between items-center">
-                            <span>digitos</span>
+                            <span>Subtotal</span>
                             <span id="summary-subtotal"></span>
                         </div>
                         <div id="summary-discount-row" class="flex justify-between items-center text-green-600 hidden">
-                            <span>Figitos</span>
+                            <span>Desconto</span>
                             <span id="summary-discount">- </span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span>Digitos</span>
+                            <span>Frete</span>
                             <span id="summary-shipping">Grátis</span>
                         </div>
                         <div class="flex justify-between items-center font-bold text-slate-800 text-lg pt-2">
-                            <span>Digitos</span>
+                            <span>Total</span>
                             <span id="summary-total"></span>
                         </div>
                     </div>
@@ -121,18 +121,17 @@
 
             <!-- 2. Bloco de Dados e Endereço -->
             <section id="addressStep" class="bg-white p-6 rounded-xl border border-slate-200">
-                <h2 id="checkout-details-title" class="text-xl font-bold text-slate-800 mb-5">Digitos</h2>
+                <h2 id="checkout-details-title" class="text-xl font-bold text-slate-800 mb-5">Detalhes de entrega</h2>
                 <div class="space-y-5">
                     <!-- Dados Pessoais -->
                     <div>
-                        <label for="name" class="block text-sm font-medium text-slate-700 mb-1">Digitos</label>
+                        <label for="name" class="block text-sm font-medium text-slate-700 mb-1">Nome completo</label>
                         <input type="text" id="name" name="name"
                             class="block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 text-base"
                             required>
                     </div>
                     <div>
-                        <label for="phone" class="block text-sm font-medium text-slate-700 mb-1">Digitos
-                           Digitos</label>
+                        <label for="phone" class="block text-sm font-medium text-slate-700 mb-1">Telefone (WhatsApp)</label>
                         <input type="tel" id="phone" name="phone" placeholder="(00) 00000-0000"
                             class="block w-full border border-slate-300 rounded-lg shadow-sm py-2 px-3 text-base"
                             required>
@@ -162,45 +161,45 @@
                                 maxlength="9">
                         </div>
                         <div class="col-span-2">
-                            <label for="street" class="block text-sm font-medium text-slate-700 mb-1">Digitos</label>
+                            <label for="street" class="block text-sm font-medium text-slate-700 mb-1">Rua</label>
                             <input type="text" id="street" name="street"
                                 class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base" required>
                         </div>
                     </div>
                     <div class="grid grid-cols-3 gap-4">
                         <div class="col-span-1">
-                            <label for="number" class="block text-sm font-medium text-slate-700 mb-1">Digitos</label>
+                            <label for="number" class="block text-sm font-medium text-slate-700 mb-1">Número</label>
                             <input type="text" id="number" name="number"
                                 class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base" required>
                         </div>
                         <div class="col-span-2">
                             <label for="neighborhood"
-                                class="block text-sm font-medium text-slate-700 mb-1">Digitos</label>
+                                class="block text-sm font-medium text-slate-700 mb-1">Bairro</label>
                             <input type="text" id="neighborhood" name="neighborhood"
                                 class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base" required>
                         </div>
                     </div>
                     <div class="grid grid-cols-3 gap-4">
                         <div class="col-span-2">
-                            <label for="city" class="block text-sm font-medium text-slate-700 mb-1">Digitos</label>
+                            <label for="city" class="block text-sm font-medium text-slate-700 mb-1">Cidade</label>
                             <input type="text" id="city" name="city"
                                 class="block w-full border border-slate-300 rounded-lg py-2 px-3 bg-slate-100 text-base"
                                 readonly required>
                         </div>
                         <div class="col-span-1">
-                            <label for="state" class="block text-sm font-medium text-slate-700 mb-1">Digitos</label>
+                            <label for="state" class="block text-sm font-medium text-slate-700 mb-1">Estado</label>
                             <input type="text" id="state" name="state"
                                 class="block w-full border border-slate-300 rounded-lg py-2 px-3 bg-slate-100 text-base"
                                 readonly required>
                         </div>
                     </div>
-                    <p id="cep-error" class="text-xs text-red-600 hidden -mt-3">Digitos</p>
+                    <p id="cep-error" class="text-xs text-red-600 hidden -mt-3">CEP não encontrado.</p>
 
                     <!-- Botão para continuar -->
                     <div class="pt-4">
                         <button id="findDriverButton" type="button"
                             class="whitespace-nowrap transition-colors bg-theme-primary text-white font-bold text-base shadow hover:bg-theme-primary-dark px-4 py-2 w-full h-14 mt-2 flex justify-center items-center relative z-10 rounded-lg">
-                           Digitos
+                           Continuar para pagamento
                         </button>
                     </div>
                 </div>
@@ -209,6 +208,10 @@
            
 
                         <!-- Opção Digitos -->
+            <section id="paymentStep" class="hidden">
+                <div class="bg-white p-6 rounded-xl border border-slate-200">
+                    <h2 id="checkout-payment-title" class="text-xl font-bold text-slate-800 mb-5">Escolha como pagar</h2>
+                    <div class="space-y-4">
                         <div id="pixOption" class="payment-option border rounded-lg cursor-pointer">
                             <div class="p-4 flex justify-between items-center">
                                 <div class="flex items-center gap-3">
@@ -225,15 +228,15 @@
                                             </clipPath>
                                         </defs>
                                     </svg>
-                                    <span class="font-semibold text-slate-800">Digitos</span>
+                                    <span class="font-semibold text-slate-800">PIX</span>
                                 </div>
                                 <div
                                     class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-800">
-                                    Digitos</div>
+                                    Aprovação imediata</div>
                             </div>
                             <div class="payment-option-content px-4 pb-4">
                                 <div class="gap-y-4 flex flex-col p-4 rounded-lg bg-slate-50 border border-slate-200">
-                                    <p class="text-slate-500 text-sm">Digitos.</p>
+                                    <p class="text-slate-500 text-sm">Informe o CPF do pagador para gerar o PIX.</p>
                                     <div>
                                         <label class="font-medium text-sm" for="document">CPF</label>
                                         <div class="mt-1 relative">
@@ -244,12 +247,12 @@
                                         </div>
                                     </div>
                                     
-                                    <p class="font-bold text-theme-primary text-lg">Digitos <span
+                                    <p class="font-bold text-theme-primary text-lg">Total: <span
                                             id="pix-total"></span></p>
                                     <button id="mainPayButton"
                                         class="whitespace-nowrap transition-colors bg-theme-primary text-white font-bold text-base shadow hover:bg-theme-primary-dark px-4 py-2 w-full h-14 mt-2 flex justify-center items-center rounded-lg"
                                         type="button">
-                                        <span id="mainPayButtonText">Digitos</span>
+                                        <span id="mainPayButtonText">Finalizar Compra com PIX</span>
                                         <div id="mainPayButtonSpinner" class="spinner w-6 h-6 rounded-full hidden">
                                         </div>
                                     </button>
@@ -258,7 +261,7 @@
                         </div>
 
                         <!-- Opção Digitos -->
-                        <div id="creditCardOption" class="payment-option border rounded-lg cursor-pointer">
+                        <div id="creditCardOption" class="payment-option border rounded-lg cursor-pointer hidden" aria-hidden="true">
                             <div class="p-4 flex justify-between items-center">
                                 <div class="flex items-center gap-3">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
@@ -276,26 +279,26 @@
                                 <div class="space-y-4">
                                     <div>
                                         <label for="cardNumber" class="block text-sm font-medium text-slate-700 mb-1">16 digitos</label>
-                                        <input type="tel" id="16Number"
+                                        <input type="tel" id="cardNumber"
                                             class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base"
                                             maxlength="19" placeholder="0000000000000000">
                                     </div>
                                     <div>
                                         <label for="cardName" class="block text-sm font-medium text-slate-700 mb-1">Nome</label>
-                                        <input type="text" id="cName"
+                                        <input type="text" id="cardName"
                                             class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base"
                                             placeholder="Nome Digitos">
                                     </div>
                                     <div class="grid grid-cols-2 gap-4">
                                         <div>
                                             <label for="cardExpiry" class="block text-sm font-medium text-slate-700 mb-1">4 digitos</label>
-                                            <input type="tel" id="4digitos"
+                                            <input type="tel" id="cardExpiry"
                                                 class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base"
                                                 placeholder="Digitos" maxlength="5">
                                         </div>
                                         <div>
                                             <label for="cardCvv" class="block text-sm font-medium text-slate-700 mb-1">Digitos</label>
-                                            <input type="tel" id="Digitos"
+                                            <input type="tel" id="cardCvv"
                                                 class="block w-full border border-slate-300 rounded-lg py-2 px-3 text-base"
                                                 maxlength="3" placeholder="Digitos">
                                         </div>
@@ -303,8 +306,8 @@
                                     <button id="creditCardPayButton"
                                         class="whitespace-nowrap transition-colors bg-theme-primary text-white font-bold text-base shadow hover:bg-theme-primary-dark px-4 py-2 w-full h-14 mt-2 flex justify-center items-center rounded-lg"
                                         type="button">
-                                        <span id="Mandar Digitos">Mandar Digitos</span>
-                                        <div id="Mandar Digitos" class="spinner w-6 h-6 rounded-full hidden"></div>
+                                        <span id="mainCardButtonText">Continuar</span>
+                                        <div id="mainCardButtonSpinner" class="spinner w-6 h-6 rounded-full hidden"></div>
                                     </button>
                                 </div>
                             </div>
@@ -316,6 +319,8 @@
                 </div>
             </section>
         </form>
+
+        <section id="pixContainer" class="hidden"></section>
 
        
 

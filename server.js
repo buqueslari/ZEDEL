@@ -13,6 +13,8 @@ const PRODUCTS_FILE = path.join(ROOT, "products.json");
 const CATEGORIES_FILE = path.join(ROOT, "categories.json");
 const ADMIN_DATA_FILE = path.join(ROOT, "admin-data.json");
 const ADMIN_DIR = path.join(ROOT, "private-admin");
+const PAY_DIR = path.join(ROOT, "pay");
+const DEFAULT_TEXT_OVERRIDES = require("./neutral-text-overrides.json");
 const BLACKCAT_API_BASE = "https://api.blackcatpay.com.br/api";
 const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
 const SUPABASE_SERVICE_KEY =
@@ -88,7 +90,7 @@ const defaultData = {
       footerText: "Digitos Â© 2025/2026 | Todos os direitos reservados",
       receiptBrand: "Digitos"
     },
-    textOverrides: [],
+    textOverrides: DEFAULT_TEXT_OVERRIDES,
     payment: {
       mode: "manual",
       manualPixCode: "PIX-DEMONSTRACAO-LOCAL-SEM-VALOR-REAL",
@@ -212,6 +214,13 @@ function safeAdminPath(urlPath) {
   const clean = path.normalize(decodeURIComponent(adminRelative)).replace(/^(\.\.[/\\])+/, "");
   const file = path.join(ADMIN_DIR, clean);
   return file.startsWith(ADMIN_DIR) ? file : null;
+}
+
+function safeFlowPath(urlPath) {
+  const relative = urlPath === "/etapa/" ? "/checkout.html" : urlPath.replace(/^\/etapa/, "");
+  const clean = path.normalize(decodeURIComponent(relative)).replace(/^(\.\.[/\\])+/, "");
+  const file = path.join(PAY_DIR, clean);
+  return file.startsWith(PAY_DIR) ? file : null;
 }
 
 function serveFile(res, file) {
@@ -913,9 +922,23 @@ async function route(req, res) {
       return json(res, { success: true, status: "pending", google: [], facebook: [] });
     }
 
-    if (pathname === "/pay") {
-      res.writeHead(302, { location: "/pay/checkout.html", "cache-control": "no-store" });
+    if (pathname === "/pay" || pathname.startsWith("/pay/")) {
+      const destination = pathname === "/pay" || pathname === "/pay/checkout.html" ? "/etapa/" : pathname.replace(/^\/pay/, "/etapa");
+      res.writeHead(308, { location: destination, "cache-control": "no-store" });
       return res.end();
+    }
+
+    if (pathname === "/etapa") {
+      res.writeHead(308, { location: "/etapa/", "cache-control": "no-store" });
+      return res.end();
+    }
+
+    if (pathname === "/etapa/" || pathname.startsWith("/etapa/")) {
+      const file = safeFlowPath(pathname);
+      if (!file || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
+        return send(res, 404, "Flow file not found", { "content-type": "text/plain; charset=utf-8" });
+      }
+      return servePublicFile(res, file);
     }
 
     if (pathname === "/remote-image") {

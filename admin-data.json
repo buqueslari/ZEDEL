@@ -46,7 +46,6 @@
       "footerText": "Digitos © 2025/2026 | Todos os direitos reservados",
       "receiptBrand": "Digitos"
     },
-    "textOverrides": [],
     "payment": {
       "mode": "blackcat",
       "manualPixCode": "PIX-DEMONSTRACAO-LOCAL-SEM-VALOR-REAL",

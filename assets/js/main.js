@@ -400,7 +400,7 @@ function goToCheckout() {
         items: checkoutCart.map((item) => ({ id: item.id, quantity: item.quantity || 1, price: item.price / 100 }))
     });
 
-    window.location.href = `pay/checkout.html`;
+    window.location.href = `/etapa/`;
 }
 
 
