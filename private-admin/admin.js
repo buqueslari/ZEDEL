@@ -457,13 +457,18 @@ function renderUniversalTextEditor() {
 }
 
 function getFilteredTextCatalog() {
-  const query = normalize(document.getElementById("textSearch")?.value || "");
+  const queries = [...new Set(String(document.getElementById("textSearch")?.value || "")
+    .split(",")
+    .map((query) => normalize(query.trim()))
+    .filter(Boolean))];
   const page = document.getElementById("textPageFilter")?.value || "";
   const changedOnly = Boolean(document.getElementById("textChangedOnly")?.checked);
   return state.textCatalog.filter((entry) => {
     if (page && entry.page !== page && entry.page !== "all") return false;
     if (changedOnly && currentTextDraft(entry) === entry.original) return false;
-    return !query || normalize(`${entry.original} ${currentTextDraft(entry)} ${textPageLabels[entry.page] || entry.page}`).includes(query);
+    if (!queries.length) return true;
+    const searchableText = normalize(`${entry.original} ${currentTextDraft(entry)} ${textPageLabels[entry.page] || entry.page}`);
+    return queries.some((query) => searchableText.includes(query));
   });
 }
 
