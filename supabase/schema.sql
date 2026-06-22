@@ -1,4 +1,4 @@
--- Delivery do Z Express - schema de produção para Supabase.
+-- Digitos - schema de produção para Supabase.
 -- O site acessa estas tabelas via backend (/api/*) usando service_role no servidor.
 -- Não exponha SUPABASE_SERVICE_ROLE_KEY no navegador.
 

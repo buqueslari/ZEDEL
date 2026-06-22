@@ -1,9 +1,9 @@
 {
   "settings": {
     "store": {
-      "browserTitle": "Delivery do Z Express - Bebidas e Conveniência",
-      "title": "Delivery do Z Express - Sua Bebida Gelada Online",
-      "brandName": "Delivery do Z Express",
+      "browserTitle": "Digitos - Bebidas e Conveniência",
+      "title": "Digitos - Sua Bebida Gelada Online",
+      "brandName": "Digitos",
       "deliveryTime": "Entrega em até 40 min",
       "deliveryLabel": "Entrega Grátis",
       "welcomeCity": "Bem-vindo!",
@@ -30,7 +30,7 @@
       "ageFootnote": "Ao entrar, você concorda com nossos termos de uso e confirma ter idade legal para comprar bebidas alcoólicas."
     },
     "checkout": {
-      "browserTitle": "Finalizar Pedido - Delivery do Z Express",
+      "browserTitle": "Finalizar Pedido - Digitos",
       "headerBrand": "Z Express",
       "notice": "Sua bebida sempre gelada, com entrega super rápida! 🍻",
       "summaryToggle": "Mostrar resumo do pedido",
@@ -43,8 +43,8 @@
       "paymentTitle": "Escolha como pagar",
       "pixButton": "Finalizar Compra com PIX",
       "footerContact": "(99) 98500-5032",
-      "footerText": "Delivery do Z Express © 2025/2026 | Todos os direitos reservados",
-      "receiptBrand": "DELIVERY DO Z EXPRESS"
+      "footerText": "Digitos © 2025/2026 | Todos os direitos reservados",
+      "receiptBrand": "Digitos"
     },
     "payment": {
       "mode": "blackcat",

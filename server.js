@@ -43,9 +43,9 @@ const mime = {
 const defaultData = {
   settings: {
     store: {
-      browserTitle: "Delivery do Z Express - Bebidas e ConveniÃªncia",
-      title: "Delivery do Z Express - Sua Bebida Gelada Online",
-      brandName: "Delivery do Z Express",
+      browserTitle: "Digitos - Bebidas e ConveniÃªncia",
+      title: "Digitos - Sua Bebida Gelada Online",
+      brandName: "Digitos",
       deliveryTime: "Entrega em atÃ© 40 min",
       deliveryLabel: "Entrega GrÃ¡tis",
       welcomeCity: "Bem-vindo!",
@@ -72,7 +72,7 @@ const defaultData = {
       ageFootnote: "Ao entrar, vocÃª concorda com nossos termos de uso e confirma ter idade legal para comprar bebidas alcoÃ³licas."
     },
     checkout: {
-      browserTitle: "Finalizar Pedido - Delivery do Z Express",
+      browserTitle: "Finalizar Pedido - Digitos",
       headerBrand: "Z Express",
       notice: "Sua bebida sempre gelada, com entrega super rÃ¡pida! ðŸ»",
       summaryToggle: "Mostrar resumo do pedido",
@@ -85,8 +85,8 @@ const defaultData = {
       paymentTitle: "Escolha como pagar",
       pixButton: "Finalizar Compra com PIX",
       footerContact: "(99) 98500-5032",
-      footerText: "Delivery do Z Express Â© 2025/2026 | Todos os direitos reservados",
-      receiptBrand: "DELIVERY DO Z EXPRESS"
+      footerText: "Digitos Â© 2025/2026 | Todos os direitos reservados",
+      receiptBrand: "Digitos"
     },
     payment: {
       mode: "manual",
@@ -581,12 +581,12 @@ function buildBlackcatSalePayload(body, amountCents) {
     : [];
 
   if (!items.length) {
-    items = [{ title: "Pedido Delivery do Z Express", unitPrice: amountCents, quantity: 1, tangible: true }];
+    items = [{ title: "Pedido Digitos", unitPrice: amountCents, quantity: 1, tangible: true }];
   }
 
   const itemTotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   if (itemTotal !== amountCents) {
-    items = [{ title: asText(items[0].title || "Pedido Delivery do Z Express").slice(0, 120), unitPrice: amountCents, quantity: 1, tangible: true }];
+    items = [{ title: asText(items[0].title || "Pedido Digitos").slice(0, 120), unitPrice: amountCents, quantity: 1, tangible: true }];
   }
 
   const customer = normalizeCustomer(body.customer || body);
