@@ -45,9 +45,9 @@ const mime = {
 const defaultData = {
   settings: {
     store: {
-      browserTitle: "Digitos - Bebidas e ConveniÃªncia",
-      title: "Digitos - Sua Bebida Gelada Online",
-      brandName: "Digitos",
+      browserTitle: "Zé Delivery - Bebidas e ConveniÃªncia",
+      title: "Zé Delivery - Sua Bebida Gelada Online",
+      brandName: "Zé Delivery",
       deliveryTime: "Entrega em atÃ© 40 min",
       deliveryLabel: "Entrega GrÃ¡tis",
       welcomeCity: "Bem-vindo!",
@@ -74,7 +74,7 @@ const defaultData = {
       ageFootnote: "Ao entrar, vocÃª concorda com nossos termos de uso e confirma ter idade legal para comprar bebidas alcoÃ³licas."
     },
     checkout: {
-      browserTitle: "Finalizar Pedido - Digitos",
+      browserTitle: "Finalizar Pedido - Zé Delivery",
       headerBrand: "Z Express",
       notice: "Sua bebida sempre gelada, com entrega super rÃ¡pida! ðŸ»",
       summaryToggle: "Mostrar resumo do pedido",
@@ -87,8 +87,8 @@ const defaultData = {
       paymentTitle: "Escolha como pagar",
       pixButton: "Finalizar Compra com PIX",
       footerContact: "(99) 98500-5032",
-      footerText: "Digitos Â© 2025/2026 | Todos os direitos reservados",
-      receiptBrand: "Digitos"
+      footerText: "Zé Delivery Â© 2025/2026 | Todos os direitos reservados",
+      receiptBrand: "Zé Delivery"
     },
     textOverrides: DEFAULT_TEXT_OVERRIDES,
     payment: {
@@ -591,12 +591,12 @@ function buildBlackcatSalePayload(body, amountCents) {
     : [];
 
   if (!items.length) {
-    items = [{ title: "Pedido Digitos", unitPrice: amountCents, quantity: 1, tangible: true }];
+    items = [{ title: "Pedido Zé Delivery", unitPrice: amountCents, quantity: 1, tangible: true }];
   }
 
   const itemTotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   if (itemTotal !== amountCents) {
-    items = [{ title: asText(items[0].title || "Pedido Digitos").slice(0, 120), unitPrice: amountCents, quantity: 1, tangible: true }];
+    items = [{ title: asText(items[0].title || "Pedido Zé Delivery").slice(0, 120), unitPrice: amountCents, quantity: 1, tangible: true }];
   }
 
   const customer = normalizeCustomer(body.customer || body);
