@@ -3170,3 +3170,32 @@ handlePayment = async function (paymentMethod) {
         };
     }
 })();
+// ===============================
+// PATCH - FORÇAR FOTO DO ENTREGADOR
+// ===============================
+
+(function () {
+    const DRIVER_FIXED_PHOTO = 'https://i.ibb.co/bjd0khXn/o-motoboy-alan-campos-oliveira-28-denuncia-que-abordagens-policiais-sao-motivadas-pela-cor-da-pele-1.jpg';
+
+    const originalShowDriverFoundScreen = window.showDriverFoundScreen;
+
+    window.showDriverFoundScreen = async function (...args) {
+        const result = await originalShowDriverFoundScreen.apply(this, args);
+
+        setTimeout(() => {
+            const photo = document.getElementById('driverPhoto');
+            const fallback = document.getElementById('driverInitialsFallback');
+
+            if (photo) {
+                photo.src = DRIVER_FIXED_PHOTO;
+                photo.style.display = 'block';
+            }
+
+            if (fallback) {
+                fallback.style.display = 'none';
+            }
+        }, 100);
+
+        return result;
+    };
+})();
