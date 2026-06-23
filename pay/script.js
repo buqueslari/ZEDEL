@@ -2545,3 +2545,579 @@ handlePayment = async function (paymentMethod) {
         });
     });
 })();
+// ===============================
+// PATCH VISUAL - TELA BONITA DO ENTREGADOR
+// Cole este bloco no FINAL do arquivo JS, abaixo do patch anterior
+// ===============================
+
+(function () {
+    function el(id) {
+        return document.getElementById(id);
+    }
+
+    function hide(id) {
+        el(id)?.classList.add('hidden');
+    }
+
+    function show(id) {
+        el(id)?.classList.remove('hidden');
+    }
+
+    function setText(id, value) {
+        const element = el(id);
+        if (element) element.innerText = value ?? '';
+    }
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
+    function getInitials(name) {
+        return String(name || 'Entregador')
+            .trim()
+            .split(/\s+/)
+            .slice(0, 2)
+            .map(part => part[0])
+            .join('')
+            .toUpperCase();
+    }
+
+    function getDriverPhotoUrl(driver) {
+        const seed = encodeURIComponent(driver.name || 'entregador');
+
+        // Avatar simulado seguro para teste.
+        // Se você tiver fotos próprias/autorizadas, troque por:
+        // return './assets/entregadores/driver-1.jpg';
+        return `https://api.dicebear.com/9.x/notionists/svg?seed=${seed}&backgroundColor=f59e0b,fb923c,facc15`;
+    }
+
+    function buildBeautifulDriverScreen() {
+        let driverStep = el('driverFoundStep');
+
+        if (!driverStep) {
+            driverStep = document.createElement('section');
+            driverStep.id = 'driverFoundStep';
+
+            const main = document.querySelector('main') || document.body;
+            main.appendChild(driverStep);
+        }
+
+        driverStep.className = 'hidden';
+
+        driverStep.innerHTML = `
+            <div style="
+                max-width: 620px;
+                margin: 0 auto;
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 24px;
+                overflow: hidden;
+                box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+            ">
+                <div style="
+                    padding: 18px 18px 0 18px;
+                    background: linear-gradient(180deg, #fff7ed 0%, #ffffff 70%);
+                ">
+                    <div style="
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        margin-bottom: 14px;
+                    ">
+                        <div>
+                            <p style="
+                                font-size: 13px;
+                                color: #f59e0b;
+                                font-weight: 800;
+                                margin: 0 0 4px 0;
+                                letter-spacing: .3px;
+                                text-transform: uppercase;
+                            ">Pedido em andamento</p>
+
+                            <h2 style="
+                                font-size: 24px;
+                                line-height: 1.1;
+                                color: #0f172a;
+                                font-weight: 900;
+                                margin: 0;
+                            ">Entregador encontrado</h2>
+                        </div>
+
+                        <div style="
+                            width: 48px;
+                            height: 48px;
+                            border-radius: 16px;
+                            background: #f59e0b;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            color: white;
+                            font-size: 25px;
+                            box-shadow: 0 12px 24px rgba(245, 158, 11, .35);
+                        ">🏍️</div>
+                    </div>
+
+                    <div style="
+                        position: relative;
+                        height: 230px;
+                        border-radius: 20px;
+                        overflow: hidden;
+                        border: 1px solid #e2e8f0;
+                        background: #f1f5f9;
+                    ">
+                        <div id="mapContainer" style="
+                            position: absolute;
+                            inset: 0;
+                            width: 100%;
+                            height: 100%;
+                            z-index: 1;
+                        "></div>
+
+                        <div style="
+                            position: absolute;
+                            inset: 0;
+                            z-index: 2;
+                            pointer-events: none;
+                            background: linear-gradient(180deg, rgba(15,23,42,0.05) 0%, rgba(15,23,42,0.72) 100%);
+                        "></div>
+
+                        <div style="
+                            position: absolute;
+                            top: 14px;
+                            left: 14px;
+                            z-index: 3;
+                            background: rgba(255, 255, 255, .95);
+                            backdrop-filter: blur(8px);
+                            color: #0f172a;
+                            border-radius: 999px;
+                            padding: 8px 12px;
+                            font-size: 12px;
+                            font-weight: 800;
+                            display: flex;
+                            align-items: center;
+                            gap: 7px;
+                            box-shadow: 0 8px 22px rgba(15,23,42,.12);
+                        ">
+                            <span style="
+                                width: 9px;
+                                height: 9px;
+                                background: #22c55e;
+                                border-radius: 50%;
+                                display: inline-block;
+                                box-shadow: 0 0 0 4px rgba(34,197,94,.18);
+                            "></span>
+                            Disponível agora
+                        </div>
+
+                        <div style="
+                            position: absolute;
+                            left: 16px;
+                            right: 16px;
+                            bottom: 16px;
+                            z-index: 3;
+                            display: flex;
+                            align-items: end;
+                            gap: 14px;
+                        ">
+                            <div style="position: relative; flex-shrink: 0;">
+                                <img id="driverPhoto" src="" alt="Foto do entregador" style="
+                                    width: 88px;
+                                    height: 88px;
+                                    border-radius: 24px;
+                                    object-fit: cover;
+                                    background: #fff7ed;
+                                    border: 4px solid #ffffff;
+                                    box-shadow: 0 14px 30px rgba(0,0,0,.26);
+                                ">
+
+                                <div id="driverInitialsFallback" style="
+                                    display: none;
+                                    width: 88px;
+                                    height: 88px;
+                                    border-radius: 24px;
+                                    background: linear-gradient(135deg, #f59e0b, #f97316);
+                                    border: 4px solid #ffffff;
+                                    box-shadow: 0 14px 30px rgba(0,0,0,.26);
+                                    color: white;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-size: 28px;
+                                    font-weight: 900;
+                                "></div>
+
+                                <span style="
+                                    position: absolute;
+                                    right: -2px;
+                                    bottom: -2px;
+                                    width: 24px;
+                                    height: 24px;
+                                    background: #22c55e;
+                                    border: 4px solid white;
+                                    border-radius: 50%;
+                                "></span>
+                            </div>
+
+                            <div style="min-width: 0; color: white;">
+                                <h3 id="driverName" style="
+                                    font-size: 18px;
+                                    line-height: 1.15;
+                                    font-weight: 900;
+                                    margin: 0 0 6px 0;
+                                    text-shadow: 0 2px 8px rgba(0,0,0,.22);
+                                "></h3>
+
+                                <div style="
+                                    display: flex;
+                                    flex-wrap: wrap;
+                                    align-items: center;
+                                    gap: 8px;
+                                    font-size: 13px;
+                                ">
+                                    <span style="
+                                        background: rgba(255,255,255,.94);
+                                        color: #0f172a;
+                                        padding: 6px 9px;
+                                        border-radius: 999px;
+                                        font-weight: 800;
+                                    ">
+                                        ⭐ <span id="driverRating"></span>
+                                    </span>
+
+                                    <span style="
+                                        background: rgba(255,255,255,.18);
+                                        color: white;
+                                        padding: 6px 9px;
+                                        border-radius: 999px;
+                                        font-weight: 700;
+                                        backdrop-filter: blur(8px);
+                                    ">
+                                        Identidade verificada
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="padding: 18px;">
+                    <div style="
+                        display: grid;
+                        grid-template-columns: repeat(3, minmax(0, 1fr));
+                        gap: 10px;
+                        margin-bottom: 16px;
+                    ">
+                        <div style="
+                            background: #fff7ed;
+                            border: 1px solid #fed7aa;
+                            border-radius: 16px;
+                            padding: 12px;
+                        ">
+                            <p style="margin:0 0 4px 0; color:#9a3412; font-size:11px; font-weight:800; text-transform:uppercase;">Tempo</p>
+                            <p id="deliveryTime" style="margin:0; color:#0f172a; font-size:18px; font-weight:900;"></p>
+                        </div>
+
+                        <div style="
+                            background: #f8fafc;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 16px;
+                            padding: 12px;
+                        ">
+                            <p style="margin:0 0 4px 0; color:#64748b; font-size:11px; font-weight:800; text-transform:uppercase;">Distância</p>
+                            <p id="deliveryDistance" style="margin:0; color:#0f172a; font-size:18px; font-weight:900;"></p>
+                        </div>
+
+                        <div style="
+                            background: #f8fafc;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 16px;
+                            padding: 12px;
+                        ">
+                            <p style="margin:0 0 4px 0; color:#64748b; font-size:11px; font-weight:800; text-transform:uppercase;">Placa</p>
+                            <p id="driverPlate" style="margin:0; color:#0f172a; font-size:16px; font-weight:900;"></p>
+                        </div>
+                    </div>
+
+                    <div style="
+                        background: #f8fafc;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 18px;
+                        padding: 14px;
+                        margin-bottom: 14px;
+                    ">
+                        <div style="
+                            display: flex;
+                            align-items: center;
+                            gap: 12px;
+                            margin-bottom: 12px;
+                        ">
+                            <div style="
+                                width: 38px;
+                                height: 38px;
+                                border-radius: 14px;
+                                background: #fff7ed;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                font-size: 20px;
+                            ">🛵</div>
+
+                            <div>
+                                <p style="margin:0; color:#64748b; font-size:12px; font-weight:700;">Veículo do entregador</p>
+                                <p id="driverCar" style="margin:0; color:#0f172a; font-size:15px; font-weight:900;"></p>
+                            </div>
+                        </div>
+
+                        <div style="
+                            display: flex;
+                            align-items: flex-start;
+                            gap: 12px;
+                            border-top: 1px dashed #cbd5e1;
+                            padding-top: 12px;
+                        ">
+                            <div style="
+                                width: 38px;
+                                height: 38px;
+                                border-radius: 14px;
+                                background: #eff6ff;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                font-size: 20px;
+                            ">📍</div>
+
+                            <div>
+                                <p style="margin:0; color:#64748b; font-size:12px; font-weight:700;">Entregando em</p>
+                                <p id="driverAddress" style="margin:0; color:#0f172a; font-size:14px; font-weight:800; line-height:1.35;"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="
+                        background: #ecfdf5;
+                        border: 1px solid #bbf7d0;
+                        color: #166534;
+                        border-radius: 16px;
+                        padding: 12px 14px;
+                        font-size: 13px;
+                        font-weight: 700;
+                        margin-bottom: 16px;
+                    ">
+                        ✅ Entregador reservado. Confirme os dados do pedido para continuar.
+                        <br>
+                        <span id="distributorCnpj" style="font-size:12px; color:#64748b; font-weight:600;"></span>
+                    </div>
+
+                    <button id="continueToReviewButton" type="button" style="
+                        width: 100%;
+                        border: 0;
+                        border-radius: 16px;
+                        background: linear-gradient(135deg, #f59e0b, #f97316);
+                        color: white;
+                        font-size: 16px;
+                        font-weight: 900;
+                        padding: 15px 18px;
+                        cursor: pointer;
+                        box-shadow: 0 14px 28px rgba(245, 158, 11, .28);
+                    ">
+                        Continuar para revisar pedido
+                    </button>
+                </div>
+            </div>
+        `;
+
+        return driverStep;
+    }
+
+    function renderStaticMapFallback(mapContainer) {
+        if (!mapContainer) return;
+
+        mapContainer.innerHTML = `
+            <iframe
+                width="100%"
+                height="100%"
+                frameborder="0"
+                scrolling="no"
+                src="https://www.openstreetmap.org/export/embed.html?bbox=-46.70%2C-23.60%2C-46.57%2C-23.50&layer=mapnik"
+                style="border:0; pointer-events:none;">
+            </iframe>
+        `;
+    }
+
+    async function renderMapSafely(addressString, preloadedGeo) {
+        const mapContainer = el('mapContainer');
+        if (!mapContainer) return;
+
+        mapContainer.innerHTML = '';
+
+        try {
+            if (typeof L === 'undefined') {
+                renderStaticMapFallback(mapContainer);
+                return;
+            }
+
+            if (typeof leafletMap !== 'undefined' && leafletMap) {
+                leafletMap.remove();
+            }
+
+            let geo = preloadedGeo;
+
+            if (!geo && typeof geocodeAddress === 'function') {
+                geo = await geocodeAddress(addressString);
+            }
+
+            if (!geo || !geo.lat || !geo.lon) {
+                renderStaticMapFallback(mapContainer);
+                return;
+            }
+
+            const customerLatLng = L.latLng(geo.lat, geo.lon);
+
+            leafletMap = L.map(mapContainer, {
+                zoomControl: false,
+                scrollWheelZoom: false,
+                dragging: false,
+                doubleClickZoom: false,
+                attributionControl: false
+            }).setView(customerLatLng, 16);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(leafletMap);
+
+            const markerIcon = L.divIcon({
+                className: '',
+                html: `
+                    <div style="
+                        background:#f59e0b;
+                        width:32px;
+                        height:32px;
+                        border-radius:50% 50% 50% 0;
+                        transform:rotate(-45deg);
+                        border:3px solid #fff;
+                        box-shadow:0 2px 8px rgba(0,0,0,0.3);
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                    ">
+                        <div style="
+                            transform:rotate(45deg);
+                            color:#fff;
+                            font-size:14px;
+                            font-weight:bold;
+                        ">📍</div>
+                    </div>
+                `,
+                iconSize: [32, 32],
+                iconAnchor: [16, 32],
+                popupAnchor: [0, -32]
+            });
+
+            L.marker(customerLatLng, { icon: markerIcon })
+                .addTo(leafletMap)
+                .bindPopup('<b>Seu Endereço Aproximado</b>')
+                .openPopup();
+
+            setTimeout(() => {
+                if (leafletMap) leafletMap.invalidateSize();
+            }, 150);
+
+        } catch (error) {
+            console.warn('[driver-map] Erro ao renderizar mapa:', error);
+            renderStaticMapFallback(mapContainer);
+        }
+    }
+
+    window.showDriverFoundScreen = async function (addressString, preloadedGeo = null) {
+        buildBeautifulDriverScreen();
+
+        hide('loadingStep');
+        hide('paymentStep');
+        hide('reviewStep');
+        hide('pixContainer');
+
+        el('checkoutForm')?.classList.add('hidden');
+        el('summarySection')?.classList.add('hidden');
+
+        const driver = typeof getDailyDriverData === 'function'
+            ? getDailyDriverData()
+            : {
+                name: 'ENTREGADOR TESTE',
+                rating: '4.9',
+                plate: 'ABC-1D23',
+                vehicle: 'Honda CG 160',
+                distance: '2.4',
+                time: '14'
+            };
+
+        const photoUrl = getDriverPhotoUrl(driver);
+        const photo = el('driverPhoto');
+        const fallback = el('driverInitialsFallback');
+
+        if (photo) {
+            photo.src = photoUrl;
+
+            photo.onerror = function () {
+                photo.style.display = 'none';
+
+                if (fallback) {
+                    fallback.style.display = 'flex';
+                    fallback.innerText = getInitials(driver.name);
+                }
+            };
+        }
+
+        if (fallback) {
+            fallback.innerText = getInitials(driver.name);
+        }
+
+        setText('driverName', driver.name);
+        setText('driverRating', driver.rating);
+        setText('driverPlate', driver.plate);
+        setText('driverCar', driver.vehicle);
+        setText('deliveryDistance', `${driver.distance} km`);
+        setText('deliveryTime', `~${driver.time} min`);
+        setText('driverAddress', addressString);
+        setText('distributorCnpj', 'CNPJ 39.xxx.xxx/0001-07');
+
+        show('driverFoundStep');
+
+        if (typeof updateProgressBar === 'function') {
+            updateProgressBar(2);
+        }
+
+        await renderMapSafely(addressString, preloadedGeo);
+
+        window.scrollTo(0, 0);
+    };
+
+    if (!window.__beautifulDriverContinuePatch) {
+        window.__beautifulDriverContinuePatch = true;
+
+        document.addEventListener('click', function (event) {
+            const button = event.target.closest('#continueToReviewButton');
+            if (!button) return;
+
+            event.preventDefault();
+
+            if (typeof showReviewStep === 'function') {
+                showReviewStep();
+                return;
+            }
+
+            hide('driverFoundStep');
+            show('paymentStep');
+
+            if (typeof updateProgressBar === 'function') {
+                updateProgressBar(3);
+            }
+
+            window.scrollTo(0, 0);
+        });
+    }
+})();
