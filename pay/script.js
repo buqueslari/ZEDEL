@@ -3121,3 +3121,52 @@ handlePayment = async function (paymentMethod) {
         });
     }
 })();
+// ===============================
+// PATCH - MOVER ENTREGADOR ACIMA DO RODAPÉ
+// ===============================
+
+(function () {
+    function findFooter() {
+        let footer = document.querySelector('footer');
+
+        if (footer) return footer;
+
+        const possibleFooters = [...document.querySelectorAll('div, section')];
+
+        return possibleFooters.find(element => {
+            const text = element.innerText || '';
+            return text.includes('Dígitos ©') ||
+                   text.includes('Política de Privacidade') ||
+                   text.includes('Política de Trocas');
+        });
+    }
+
+    function moveDriverBeforeFooter() {
+        const driverStep = document.getElementById('driverFoundStep');
+        const footer = findFooter();
+
+        if (!driverStep || !footer || !footer.parentNode) return;
+
+        if (footer.compareDocumentPosition(driverStep) & Node.DOCUMENT_POSITION_FOLLOWING) {
+            footer.parentNode.insertBefore(driverStep, footer);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        moveDriverBeforeFooter();
+    });
+
+    const originalShowDriverFoundScreen = window.showDriverFoundScreen;
+
+    if (typeof originalShowDriverFoundScreen === 'function') {
+        window.showDriverFoundScreen = async function (...args) {
+            const result = await originalShowDriverFoundScreen.apply(this, args);
+
+            setTimeout(() => {
+                moveDriverBeforeFooter();
+            }, 50);
+
+            return result;
+        };
+    }
+})();
