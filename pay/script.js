@@ -4609,3 +4609,175 @@ handlePayment = async function (paymentMethod) {
 
     window.goToPaymentFromDriver = goToPaymentFromDriver;
 })();
+// =====================================================
+// FLUXO CERTO: ENDEREÇO -> ENTREGADOR -> PAGAMENTO
+// =====================================================
+
+(function () {
+    function el(id) {
+        return document.getElementById(id);
+    }
+
+    function hide(id) {
+        const item = el(id);
+        if (!item) return;
+        item.classList.add('hidden');
+    }
+
+    function show(id) {
+        const item = el(id);
+        if (!item) return;
+        item.classList.remove('hidden');
+        item.style.display = '';
+    }
+
+    function showParents(element) {
+        let parent = element?.parentElement;
+
+        while (parent && parent !== document.body) {
+            parent.classList?.remove('hidden');
+            parent.style.display = '';
+            parent = parent.parentElement;
+        }
+    }
+
+    function getFullAddress() {
+        const street = el('street')?.value || '';
+        const number = el('number')?.value || '';
+        const neighborhood = el('neighborhood')?.value || '';
+        const city = el('city')?.value || '';
+        const state = el('state')?.value || '';
+
+        return `${street}, ${number} - ${neighborhood}, ${city}/${state}`;
+    }
+
+    function goToDriverScreen(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        const checkoutForm = el('checkoutForm');
+
+        if (checkoutForm && !checkoutForm.checkValidity()) {
+            checkoutForm.reportValidity();
+            return;
+        }
+
+        hide('paymentStep');
+        hide('reviewStep');
+        hide('pixContainer');
+        hide('summarySection');
+
+        if (typeof showLoadingAndDriverSearch === 'function') {
+            showLoadingAndDriverSearch();
+            return;
+        }
+
+        if (typeof showDriverFoundScreen === 'function') {
+            showDriverFoundScreen(getFullAddress());
+        }
+    }
+
+    function goToPaymentScreen(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        hide('driverFoundStep');
+        hide('loadingStep');
+        hide('reviewStep');
+        hide('addressStep');
+        hide('pixContainer');
+
+        show('checkoutForm');
+        show('paymentStep');
+        show('summarySection');
+
+        const paymentStep = el('paymentStep');
+        showParents(paymentStep);
+
+        if (typeof populateCartSummary === 'function') {
+            populateCartSummary();
+        }
+
+        if (typeof updatePricesUI === 'function') {
+            updatePricesUI();
+        }
+
+        if (typeof updateProgressBar === 'function') {
+            updateProgressBar(3);
+        }
+
+        window.scrollTo(0, 0);
+    }
+
+    function fixButtons() {
+        const findDriverButton = el('findDriverButton');
+
+        if (findDriverButton && findDriverButton.dataset.flowFixed !== 'true') {
+            findDriverButton.dataset.flowFixed = 'true';
+            findDriverButton.type = 'button';
+            findDriverButton.onclick = goToDriverScreen;
+
+            findDriverButton.addEventListener('click', goToDriverScreen, false);
+        }
+
+        const driverButton =
+            el('continueToReviewButton') ||
+            el('realContinueToReviewButton') ||
+            el('driverGoToPaymentButtonFinal') ||
+            [...document.querySelectorAll('button')].find(button => {
+                const text = (button.innerText || '').toLowerCase();
+                return text.includes('continuar') &&
+                       (text.includes('revisar') || text.includes('pagamento'));
+            });
+
+        if (driverButton && driverButton.dataset.driverPaymentFixed !== 'true') {
+            driverButton.dataset.driverPaymentFixed = 'true';
+            driverButton.type = 'button';
+            driverButton.innerText = 'Continuar para pagamento';
+            driverButton.onclick = goToPaymentScreen;
+
+            driverButton.addEventListener('click', goToPaymentScreen, false);
+        }
+    }
+
+    const oldShowDriverFoundScreen = window.showDriverFoundScreen;
+
+    if (typeof oldShowDriverFoundScreen === 'function') {
+        window.showDriverFoundScreen = async function (...args) {
+            const result = await oldShowDriverFoundScreen.apply(this, args);
+
+            setTimeout(() => {
+                fixButtons();
+
+                const driverButton =
+                    el('continueToReviewButton') ||
+                    el('realContinueToReviewButton') ||
+                    el('driverGoToPaymentButtonFinal');
+
+                if (driverButton) {
+                    driverButton.innerText = 'Continuar para pagamento';
+                    driverButton.onclick = goToPaymentScreen;
+                    driverButton.addEventListener('click', goToPaymentScreen, false);
+                }
+            }, 200);
+
+            return result;
+        };
+    }
+
+    document.addEventListener('DOMContentLoaded', fixButtons);
+
+    const observer = new MutationObserver(fixButtons);
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    window.goToDriverScreen = goToDriverScreen;
+    window.goToPaymentScreen = goToPaymentScreen;
+})();
