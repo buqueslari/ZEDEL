@@ -4133,3 +4133,190 @@ handlePayment = async function (paymentMethod) {
 
     injectResponsiveCSS();
 })();
+// =====================================================
+// PATCH DEFINITIVO - ENTREGADOR -> REVISÃO -> PAGAMENTO
+// Cole no FINAL do arquivo JS
+// =====================================================
+
+(function () {
+    function el(id) {
+        return document.getElementById(id);
+    }
+
+    function hide(id) {
+        const item = el(id);
+        if (!item) return;
+        item.classList.add('hidden');
+    }
+
+    function show(id) {
+        const item = el(id);
+        if (!item) return;
+        item.classList.remove('hidden');
+        item.style.display = '';
+    }
+
+    function forceShowParents(element) {
+        let parent = element?.parentElement;
+
+        while (parent && parent !== document.body) {
+            parent.classList?.remove('hidden');
+            parent.style.display = '';
+            parent = parent.parentElement;
+        }
+    }
+
+    function fillReviewStep() {
+        const checkoutForm = el('checkoutForm');
+        if (!checkoutForm) return;
+
+        const formData = new FormData(checkoutForm);
+
+        const name = formData.get('name') || '';
+        const phone = formData.get('phone') || '';
+
+        const street = formData.get('street') || '';
+        const number = formData.get('number') || '';
+        const neighborhood = formData.get('neighborhood') || '';
+        const city = formData.get('city') || '';
+        const state = formData.get('state') || '';
+        const cep = formData.get('cep') || '';
+
+        const reviewAddress = el('reviewAddress');
+
+        if (reviewAddress) {
+            reviewAddress.innerHTML = `
+                ${street}, ${number}<br>
+                ${neighborhood} - ${city}/${state}<br>
+                CEP: ${cep}
+            `;
+        }
+
+        if (typeof updateReviewReceipt === 'function') {
+            updateReviewReceipt(name, phone);
+        }
+    }
+
+    function goToReviewStepCorrect() {
+        hide('driverFoundStep');
+        hide('loadingStep');
+        hide('paymentStep');
+        hide('pixContainer');
+        hide('summarySection');
+        hide('addressStep');
+
+        show('checkoutForm');
+        show('reviewStep');
+
+        const reviewStep = el('reviewStep');
+        forceShowParents(reviewStep);
+
+        fillReviewStep();
+
+        if (typeof updateProgressBar === 'function') {
+            updateProgressBar(2);
+        }
+
+        window.scrollTo(0, 0);
+    }
+
+    function goToPaymentStepCorrect() {
+        hide('driverFoundStep');
+        hide('loadingStep');
+        hide('reviewStep');
+        hide('pixContainer');
+        hide('addressStep');
+
+        show('checkoutForm');
+        show('paymentStep');
+        show('summarySection');
+
+        const paymentStep = el('paymentStep');
+        forceShowParents(paymentStep);
+
+        if (typeof populateCartSummary === 'function') {
+            populateCartSummary();
+        }
+
+        if (typeof updatePricesUI === 'function') {
+            updatePricesUI();
+        }
+
+        if (typeof updateProgressBar === 'function') {
+            updateProgressBar(3);
+        }
+
+        window.scrollTo(0, 0);
+    }
+
+    function neutralizeOldContinueButton() {
+        const oldButton = el('continueToReviewButton');
+
+        if (!oldButton) return;
+
+        const newButton = oldButton.cloneNode(true);
+
+        newButton.id = 'continueToReviewButtonFixed';
+        newButton.innerText = 'Continuar para revisar pedido';
+        newButton.onclick = null;
+
+        oldButton.replaceWith(newButton);
+
+        newButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+
+            goToReviewStepCorrect();
+        }, true);
+    }
+
+    function fixGoToPaymentButton() {
+        const oldButton = el('goToPaymentButton');
+
+        if (!oldButton || oldButton.dataset.fixedPaymentButton === 'true') return;
+
+        oldButton.dataset.fixedPaymentButton = 'true';
+
+        oldButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+
+            goToPaymentStepCorrect();
+        }, true);
+    }
+
+    const oldShowDriverFoundScreen = window.showDriverFoundScreen;
+
+    if (typeof oldShowDriverFoundScreen === 'function') {
+        window.showDriverFoundScreen = async function (...args) {
+            const result = await oldShowDriverFoundScreen.apply(this, args);
+
+            setTimeout(() => {
+                neutralizeOldContinueButton();
+                fixGoToPaymentButton();
+            }, 100);
+
+            return result;
+        };
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        neutralizeOldContinueButton();
+        fixGoToPaymentButton();
+    });
+
+    const observer = new MutationObserver(function () {
+        neutralizeOldContinueButton();
+        fixGoToPaymentButton();
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    window.goToReviewStepCorrect = goToReviewStepCorrect;
+    window.goToPaymentStepCorrect = goToPaymentStepCorrect;
+})();
