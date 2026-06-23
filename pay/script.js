@@ -4133,3 +4133,182 @@ handlePayment = async function (paymentMethod) {
 
     injectResponsiveCSS();
 })();
+// =====================================================
+// PATCH CORRETO - ENTREGADOR -> REVISÃO -> PAGAMENTO
+// Cole no FINAL do arquivo JS, abaixo de todos os patches
+// =====================================================
+
+(function () {
+    function el(id) {
+        return document.getElementById(id);
+    }
+
+    function show(id) {
+        const element = el(id);
+        if (!element) return;
+        element.classList.remove('hidden');
+        element.style.display = '';
+    }
+
+    function hide(id) {
+        const element = el(id);
+        if (!element) return;
+        element.classList.add('hidden');
+    }
+
+    function unhideParents(element) {
+        let parent = element?.parentElement;
+
+        while (parent && parent !== document.body) {
+            if (parent.classList?.contains('hidden')) {
+                parent.classList.remove('hidden');
+            }
+
+            parent = parent.parentElement;
+        }
+    }
+
+    function updateReviewData() {
+        const checkoutForm = el('checkoutForm');
+        if (!checkoutForm) return;
+
+        const formData = new FormData(checkoutForm);
+
+        const name = formData.get('name') || '';
+        const phone = formData.get('phone') || '';
+
+        const street = formData.get('street') || '';
+        const number = formData.get('number') || '';
+        const neighborhood = formData.get('neighborhood') || '';
+        const city = formData.get('city') || '';
+        const state = formData.get('state') || '';
+        const cep = formData.get('cep') || '';
+
+        const reviewAddress = el('reviewAddress');
+
+        if (reviewAddress) {
+            reviewAddress.innerHTML = `
+                ${street}, ${number}<br>
+                ${neighborhood} - ${city}/${state}<br>
+                CEP: ${cep}
+            `;
+        }
+
+        if (typeof updateReviewReceipt === 'function') {
+            updateReviewReceipt(name, phone);
+        }
+    }
+
+    function goToReviewFixed() {
+        const reviewStep = el('reviewStep');
+
+        hide('driverFoundStep');
+        hide('loadingStep');
+        hide('paymentStep');
+        hide('pixContainer');
+        hide('addressStep');
+        hide('summarySection');
+
+        show('checkoutForm');
+        show('reviewStep');
+
+        if (reviewStep) {
+            unhideParents(reviewStep);
+        }
+
+        updateReviewData();
+
+        if (typeof updateProgressBar === 'function') {
+            updateProgressBar(2);
+        }
+
+        window.scrollTo(0, 0);
+    }
+
+    function goToPaymentFixed() {
+        const paymentStep = el('paymentStep');
+
+        hide('driverFoundStep');
+        hide('loadingStep');
+        hide('reviewStep');
+        hide('pixContainer');
+        hide('addressStep');
+
+        show('checkoutForm');
+        show('paymentStep');
+        show('summarySection');
+
+        if (paymentStep) {
+            unhideParents(paymentStep);
+        }
+
+        if (typeof populateCartSummary === 'function') {
+            populateCartSummary();
+        }
+
+        if (typeof updatePricesUI === 'function') {
+            updatePricesUI();
+        }
+
+        if (typeof updateProgressBar === 'function') {
+            updateProgressBar(3);
+        }
+
+        setTimeout(() => {
+            const paymentStepNow = el('paymentStep');
+            if (paymentStepNow) {
+                paymentStepNow.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            } else {
+                window.scrollTo(0, 0);
+            }
+        }, 100);
+    }
+
+    // Esse listener roda ANTES daquele patch errado antigo,
+    // então ele impede o botão de pular direto para pagamento.
+    window.addEventListener('click', function (event) {
+        const reviewButton = event.target.closest('#continueToReviewButton');
+
+        if (!reviewButton) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+
+        goToReviewFixed();
+    }, true);
+
+    // Botão da tela de revisão para ir ao pagamento.
+    window.addEventListener('click', function (event) {
+        const paymentButton = event.target.closest('#goToPaymentButton');
+
+        if (!paymentButton) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+
+        goToPaymentFixed();
+    }, true);
+
+    // Corrige o texto do botão do entregador, caso o patch antigo tenha mudado.
+    const observer = new MutationObserver(function () {
+        const continueButton = el('continueToReviewButton');
+
+        if (continueButton) {
+            continueButton.innerText = 'Continuar para revisar pedido';
+            continueButton.onclick = null;
+        }
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    window.goToReviewFixed = goToReviewFixed;
+    window.goToPaymentFixed = goToPaymentFixed;
+})();
