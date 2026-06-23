@@ -2593,7 +2593,7 @@ handlePayment = async function (paymentMethod) {
         // Avatar simulado seguro para teste.
         // Se você tiver fotos próprias/autorizadas, troque por:
         // return './assets/entregadores/driver-1.jpg';
-        return `https://api.dicebear.com/9.x/notionists/svg?seed=${seed}&backgroundColor=f59e0b,fb923c,facc15`;
+        return `https://ibb.co/twCG9fD5`;
     }
 
     function buildBeautifulDriverScreen() {
