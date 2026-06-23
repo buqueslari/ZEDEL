@@ -4470,3 +4470,142 @@ handlePayment = async function (paymentMethod) {
 
     window.goToReviewNow = goToReviewNow;
 })();
+// =====================================================
+// PATCH DEFINITIVO - BOTÃO DO ENTREGADOR VAI PARA PAGAMENTO
+// COLE NO FINAL DO JS
+// =====================================================
+
+(function () {
+    function el(id) {
+        return document.getElementById(id);
+    }
+
+    function hide(id) {
+        const item = el(id);
+        if (!item) return;
+        item.classList.add('hidden');
+    }
+
+    function show(id) {
+        const item = el(id);
+        if (!item) return;
+        item.classList.remove('hidden');
+        item.style.display = '';
+    }
+
+    function showParents(element) {
+        let parent = element?.parentElement;
+
+        while (parent && parent !== document.body) {
+            parent.classList?.remove('hidden');
+            parent.style.display = '';
+            parent = parent.parentElement;
+        }
+    }
+
+    function goToPaymentFromDriver(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+        }
+
+        hide('driverFoundStep');
+        hide('loadingStep');
+        hide('reviewStep');
+        hide('addressStep');
+        hide('pixContainer');
+
+        show('checkoutForm');
+        show('paymentStep');
+        show('summarySection');
+
+        const paymentStep = el('paymentStep');
+        showParents(paymentStep);
+
+        if (typeof populateCartSummary === 'function') {
+            populateCartSummary();
+        }
+
+        if (typeof updatePricesUI === 'function') {
+            updatePricesUI();
+        }
+
+        if (typeof updateProgressBar === 'function') {
+            updateProgressBar(3);
+        }
+
+        setTimeout(function () {
+            const paymentStepNow = el('paymentStep');
+
+            if (paymentStepNow) {
+                paymentStepNow.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            } else {
+                window.scrollTo(0, 0);
+            }
+        }, 80);
+    }
+
+    function forcePaymentAfterClick(event) {
+        goToPaymentFromDriver(event);
+
+        setTimeout(goToPaymentFromDriver, 50);
+        setTimeout(goToPaymentFromDriver, 150);
+        setTimeout(goToPaymentFromDriver, 300);
+    }
+
+    function replaceDriverButton() {
+        const oldButton =
+            el('continueToReviewButton') ||
+            el('realContinueToReviewButton') ||
+            [...document.querySelectorAll('button')].find(button => {
+                const text = (button.innerText || '').toLowerCase();
+                return text.includes('continuar') &&
+                       (text.includes('revisar') || text.includes('pagamento'));
+            });
+
+        if (!oldButton) return;
+
+        if (oldButton.id === 'driverGoToPaymentButtonFinal') return;
+
+        const newButton = oldButton.cloneNode(true);
+
+        newButton.id = 'driverGoToPaymentButtonFinal';
+        newButton.type = 'button';
+        newButton.innerText = 'Continuar para pagamento';
+        newButton.onclick = forcePaymentAfterClick;
+
+        newButton.style.pointerEvents = 'auto';
+        newButton.style.cursor = 'pointer';
+        newButton.style.position = 'relative';
+        newButton.style.zIndex = '999999';
+
+        oldButton.replaceWith(newButton);
+
+        newButton.addEventListener('pointerdown', forcePaymentAfterClick, true);
+        newButton.addEventListener('mousedown', forcePaymentAfterClick, true);
+        newButton.addEventListener('touchstart', forcePaymentAfterClick, true);
+        newButton.addEventListener('click', forcePaymentAfterClick, true);
+    }
+
+    document.addEventListener('DOMContentLoaded', replaceDriverButton);
+
+    const observer = new MutationObserver(function () {
+        replaceDriverButton();
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    setTimeout(replaceDriverButton, 100);
+    setTimeout(replaceDriverButton, 500);
+    setTimeout(replaceDriverButton, 1000);
+    setTimeout(replaceDriverButton, 2000);
+
+    window.goToPaymentFromDriver = goToPaymentFromDriver;
+})();
