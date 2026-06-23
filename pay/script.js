@@ -4320,3 +4320,153 @@ handlePayment = async function (paymentMethod) {
     window.goToReviewStepCorrect = goToReviewStepCorrect;
     window.goToPaymentStepCorrect = goToPaymentStepCorrect;
 })();
+// =====================================================
+// PATCH FINALÍSSIMO - ARRUMAR SÓ O BOTÃO "REVISAR PEDIDO"
+// Cole no FINAL do arquivo JS
+// =====================================================
+
+(function () {
+    function el(id) {
+        return document.getElementById(id);
+    }
+
+    function hide(id) {
+        const item = el(id);
+        if (!item) return;
+        item.classList.add('hidden');
+    }
+
+    function show(id) {
+        const item = el(id);
+        if (!item) return;
+        item.classList.remove('hidden');
+        item.style.display = '';
+    }
+
+    function showParents(element) {
+        let parent = element?.parentElement;
+
+        while (parent && parent !== document.body) {
+            parent.classList?.remove('hidden');
+            parent.style.display = '';
+            parent = parent.parentElement;
+        }
+    }
+
+    function fillReviewData() {
+        const checkoutForm = el('checkoutForm');
+        if (!checkoutForm) return;
+
+        const formData = new FormData(checkoutForm);
+
+        const name = formData.get('name') || '';
+        const phone = formData.get('phone') || '';
+
+        const street = formData.get('street') || '';
+        const number = formData.get('number') || '';
+        const neighborhood = formData.get('neighborhood') || '';
+        const city = formData.get('city') || '';
+        const state = formData.get('state') || '';
+        const cep = formData.get('cep') || '';
+
+        const reviewAddress = el('reviewAddress');
+
+        if (reviewAddress) {
+            reviewAddress.innerHTML = `
+                ${street}, ${number}<br>
+                ${neighborhood} - ${city}/${state}<br>
+                CEP: ${cep}
+            `;
+        }
+
+        if (typeof updateReviewReceipt === 'function') {
+            updateReviewReceipt(name, phone);
+        }
+    }
+
+    function goToReviewNow(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+        }
+
+        hide('driverFoundStep');
+        hide('loadingStep');
+        hide('paymentStep');
+        hide('pixContainer');
+        hide('summarySection');
+        hide('addressStep');
+
+        show('checkoutForm');
+        show('reviewStep');
+
+        const reviewStep = el('reviewStep');
+        showParents(reviewStep);
+
+        fillReviewData();
+
+        if (typeof updateProgressBar === 'function') {
+            updateProgressBar(2);
+        }
+
+        window.scrollTo(0, 0);
+    }
+
+    function fixReviewButton() {
+        const possibleButtons = [...document.querySelectorAll('button')];
+
+        const button = possibleButtons.find(btn => {
+            const text = (btn.innerText || '').toLowerCase();
+            return text.includes('continuar') && text.includes('revisar');
+        });
+
+        if (!button) return;
+
+        if (button.id === 'realContinueToReviewButton') return;
+
+        const newButton = button.cloneNode(true);
+
+        newButton.id = 'realContinueToReviewButton';
+        newButton.type = 'button';
+        newButton.innerText = 'Continuar para revisar pedido';
+        newButton.onclick = goToReviewNow;
+
+        newButton.style.pointerEvents = 'auto';
+        newButton.style.cursor = 'pointer';
+        newButton.style.position = 'relative';
+        newButton.style.zIndex = '9999';
+
+        button.replaceWith(newButton);
+
+        newButton.addEventListener('click', goToReviewNow, true);
+        newButton.addEventListener('touchstart', function () {}, { passive: true });
+    }
+
+    window.addEventListener('click', function (event) {
+        const button = event.target.closest('#realContinueToReviewButton');
+
+        if (!button) return;
+
+        goToReviewNow(event);
+    }, true);
+
+    document.addEventListener('DOMContentLoaded', function () {
+        fixReviewButton();
+    });
+
+    const observer = new MutationObserver(function () {
+        fixReviewButton();
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    setTimeout(fixReviewButton, 300);
+    setTimeout(fixReviewButton, 1000);
+    setTimeout(fixReviewButton, 2000);
+
+    window.goToReviewNow = goToReviewNow;
+})();
