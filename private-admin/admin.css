@@ -1,15 +1,15 @@
 :root {
   color-scheme: light;
-  --bg: #f5f7f6;
+  --bg: #f4f5f2;
   --panel: #ffffff;
-  --line: #d9dfdc;
-  --ink: #18221e;
-  --muted: #67736e;
-  --brand: #138a55;
-  --brand-dark: #0b653d;
-  --accent: #f0a320;
+  --line: #dde3dd;
+  --ink: #18221f;
+  --muted: #69756f;
+  --brand: #0f7a4a;
+  --brand-dark: #095f39;
+  --accent: #d9961f;
   --danger: #c24132;
-  --shadow: 0 10px 30px rgba(20, 35, 28, .08);
+  --shadow: 0 18px 42px rgba(30, 43, 36, .08);
 }
 
 * {
@@ -42,7 +42,7 @@ button {
   top: 0;
   height: 100vh;
   padding: 20px;
-  background: #10271d;
+  background: linear-gradient(180deg, #0d251a 0%, #132f23 100%);
   color: #f7fffb;
   display: flex;
   flex-direction: column;
@@ -118,7 +118,7 @@ button {
 
 .shell {
   min-width: 0;
-  padding: 24px;
+  padding: 26px;
 }
 
 .topbar {
@@ -195,7 +195,7 @@ h2 {
 
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 14px;
   margin-bottom: 18px;
 }
@@ -212,6 +212,17 @@ h2 {
 
 .metric {
   padding: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.metric::after {
+  content: "";
+  position: absolute;
+  inset: auto 16px 0 16px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--brand), var(--accent));
+  border-radius: 99px 99px 0 0;
 }
 
 .metric span {
@@ -525,6 +536,167 @@ td textarea {
   color: #35423d;
 }
 
+.pix-helper {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  color: #17452f;
+  background: #eef8f2;
+  border: 1px solid #cae7d5;
+  border-radius: 8px;
+}
+
+.pix-helper strong {
+  font-size: 15px;
+}
+
+.pix-helper span {
+  color: #416458;
+  line-height: 1.45;
+}
+
+.compact {
+  min-width: 40px;
+  width: 40px;
+  padding: 8px;
+}
+
+.orders-wrap table {
+  min-width: 860px;
+}
+
+td small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  background: #eef2f0;
+  color: #44534d;
+}
+
+.status-pill.pending {
+  background: #fff4d6;
+  color: #7c4a03;
+}
+
+.status-pill.paid,
+.status-pill.completed {
+  background: #e4f7ec;
+  color: #0f6b3f;
+}
+
+.status-pill.delivering {
+  background: #e6f0ff;
+  color: #24518f;
+}
+
+.status-pill.cancelled {
+  background: #fde8e4;
+  color: #9f2f22;
+}
+
+.order-details {
+  margin-top: 16px;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.details-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #edf1ef;
+}
+
+.details-head span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.details-head strong {
+  display: block;
+  margin-top: 4px;
+  word-break: break-all;
+}
+
+.details-head label {
+  min-width: 190px;
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.details-grid section,
+.items-list,
+.pix-code-box {
+  padding: 14px;
+  background: #f8faf8;
+  border: 1px solid #e4eae6;
+  border-radius: 8px;
+}
+
+.details-grid h3,
+.items-list h3,
+.pix-code-box h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
+.details-grid p {
+  margin: 7px 0;
+  color: #34413b;
+}
+
+.items-list,
+.pix-code-box {
+  margin-top: 14px;
+}
+
+.items-list p {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid #e6ece8;
+}
+
+.items-list p:first-of-type {
+  border-top: 0;
+}
+
+.pix-code-box textarea {
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+}
+
 .form-grid .wide,
 .wide {
   grid-column: 1 / -1;
@@ -648,6 +820,12 @@ code {
 
   .catalog-summary {
     display: grid;
+  }
+
+  .details-head,
+  .details-grid {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .shell {

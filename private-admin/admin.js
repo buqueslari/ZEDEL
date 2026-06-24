@@ -1,6 +1,7 @@
 const state = {
   products: [],
   categories: [],
+  orders: [],
   settings: {},
   updatedAt: null,
   activeTab: "overview",
@@ -80,6 +81,7 @@ async function loadAll() {
     const data = await api("/api/admin/bootstrap");
     state.products = data.products || [];
     state.categories = data.categories || [];
+    state.orders = data.orders || [];
     state.settings = data.settings || {};
     state.updatedAt = data.updatedAt || null;
     state.database = data.database || data.state?.database || "json-local";
@@ -138,6 +140,10 @@ function bindActions() {
   document.getElementById("saveSupabaseBtn").addEventListener("click", () => runSaveAction(() => saveSettingsSection("supabase", readSupabaseForm())));
   document.getElementById("addProductBtn").addEventListener("click", addProduct);
   document.getElementById("addCategoryBtn").addEventListener("click", addCategory);
+  document.getElementById("refreshOrdersBtn").addEventListener("click", () => runSaveAction(loadOrders));
+  document.getElementById("orderStatusFilter").addEventListener("change", renderOrders);
+  document.getElementById("ordersTable").addEventListener("click", handleOrderClick);
+  document.getElementById("orderDetails").addEventListener("change", handleOrderStatusChange);
   document.getElementById("productSearch").addEventListener("input", renderProducts);
   document.getElementById("productCategoryFilter").addEventListener("change", renderProducts);
   document.getElementById("textSearch").addEventListener("input", resetTextCatalogView);
@@ -167,6 +173,7 @@ async function runSaveAction(action) {
 
 function renderAll() {
   renderMetrics();
+  renderOrders();
   renderCategoryFilter();
   renderProducts();
   renderCategories();
@@ -184,9 +191,11 @@ function renderAll() {
 function renderMetrics() {
   const products = state.products.length;
   const categories = state.categories.length;
+  const orders = state.orders.length;
   const stock = state.products.filter((product) => Number(product.stock) > 0).length;
   const pix = state.settings.payment?.mode === "blackcat" ? "BlackCat" : "Manual";
   document.getElementById("metricProducts").textContent = products;
+  document.getElementById("metricOrders").textContent = orders;
   document.getElementById("metricCategories").textContent = categories;
   document.getElementById("metricStock").textContent = stock;
   document.getElementById("metricPix").textContent = pix;
@@ -196,6 +205,130 @@ function renderMetrics() {
   document.getElementById("overviewDatabase").style.color = usingSupabase ? "#138a55" : "#c24132";
   const warning = document.getElementById("persistenceWarning");
   if (warning) warning.hidden = usingSupabase;
+}
+
+async function loadOrders() {
+  const data = await api("/api/orders");
+  state.orders = data.orders || [];
+  renderMetrics();
+  renderOrders();
+  toast("Pedidos atualizados.");
+}
+
+function renderOrders() {
+  const table = document.getElementById("ordersTable");
+  if (!table) return;
+  const status = document.getElementById("orderStatusFilter")?.value || "";
+  const orders = state.orders.filter((order) => !status || order.status === status);
+  const rows = orders.map((order) => {
+    const total = formatMoney(order.totals?.totalCents || 0);
+    const when = order.createdAt ? new Date(order.createdAt).toLocaleString("pt-BR") : "-";
+    const customer = order.customer || {};
+    const shipping = order.shipping || {};
+    return `
+      <tr data-order-id="${escapeAttr(order.id || order.transactionId)}">
+        <td><span class="status-pill ${escapeAttr(order.status || "pending")}">${escapeHtml(orderStatusLabel(order.status))}</span></td>
+        <td><strong>${escapeHtml(customer.name || "Cliente")}</strong><small>${escapeHtml(customer.phone || "")}</small></td>
+        <td>${escapeHtml(`${shipping.city || ""}/${shipping.state || ""}`)}</td>
+        <td>${escapeHtml(String((order.items || []).length))} itens</td>
+        <td><strong>${total}</strong></td>
+        <td>${escapeHtml(when)}</td>
+        <td class="actions-cell"><button class="ghost compact" type="button" data-view-order="${escapeAttr(order.id || order.transactionId)}"><i data-lucide="eye"></i></button></td>
+      </tr>`;
+  }).join("");
+  table.innerHTML = `
+    <table>
+      <thead><tr><th>Status</th><th>Cliente</th><th>Cidade</th><th>Itens</th><th>Total</th><th>Gerado em</th><th></th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="7">Nenhum pedido encontrado.</td></tr>`}</tbody>
+    </table>`;
+  window.lucide?.createIcons();
+}
+
+function handleOrderClick(event) {
+  const button = event.target.closest("[data-view-order]");
+  if (!button) return;
+  const order = state.orders.find((item) => (item.id || item.transactionId) === button.dataset.viewOrder);
+  if (order) renderOrderDetails(order);
+}
+
+function renderOrderDetails(order) {
+  const details = document.getElementById("orderDetails");
+  const customer = order.customer || {};
+  const shipping = order.shipping || {};
+  const items = order.items || [];
+  const address = [
+    `${shipping.street || ""}, ${shipping.number || ""}`.trim(),
+    shipping.neighborhood,
+    `${shipping.city || ""}/${shipping.state || ""}`,
+    shipping.zipCode ? `CEP ${shipping.zipCode}` : "",
+  ].filter(Boolean).join(" - ");
+  details.hidden = false;
+  details.innerHTML = `
+    <div class="details-head">
+      <div>
+        <span>Pedido</span>
+        <strong>${escapeHtml(order.id || order.transactionId || "-")}</strong>
+      </div>
+      <label>Status
+        <select data-order-status="${escapeAttr(order.id || order.transactionId)}">
+          ${["pending", "paid", "delivering", "completed", "cancelled"].map((status) => `<option value="${status}" ${status === order.status ? "selected" : ""}>${orderStatusLabel(status)}</option>`).join("")}
+        </select>
+      </label>
+    </div>
+    <div class="details-grid">
+      <section>
+        <h3>Cliente</h3>
+        <p><b>Nome:</b> ${escapeHtml(customer.name || "-")}</p>
+        <p><b>Telefone:</b> ${escapeHtml(customer.phone || "-")}</p>
+        <p><b>E-mail:</b> ${escapeHtml(customer.email || "-")}</p>
+        <p><b>CPF/CNPJ:</b> ${escapeHtml(customer.document || "-")}</p>
+      </section>
+      <section>
+        <h3>Entrega</h3>
+        <p>${escapeHtml(address || "-")}</p>
+        <p><b>Complemento:</b> ${escapeHtml(shipping.complement || "-")}</p>
+      </section>
+      <section>
+        <h3>Pagamento</h3>
+        <p><b>Gateway:</b> ${escapeHtml(order.gateway || "-")}</p>
+        <p><b>Total:</b> ${formatMoney(order.totals?.totalCents || 0)}</p>
+        <p><b>Criado:</b> ${escapeHtml(order.createdAt ? new Date(order.createdAt).toLocaleString("pt-BR") : "-")}</p>
+      </section>
+    </div>
+    <section class="items-list">
+      <h3>Itens</h3>
+      ${items.map((item) => `<p><span>${escapeHtml(item.quantity)}x ${escapeHtml(item.title || "Produto")}</span><strong>${formatMoney(Number(item.unitPrice || 0) * Number(item.quantity || 1))}</strong></p>`).join("") || "<p>Nenhum item registrado.</p>"}
+    </section>
+    <section class="pix-code-box">
+      <h3>Pix copia e cola</h3>
+      <textarea rows="4" readonly>${escapeHtml(order.pix?.code || "")}</textarea>
+    </section>`;
+  details.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function handleOrderStatusChange(event) {
+  const select = event.target.closest("[data-order-status]");
+  if (!select) return;
+  const id = select.dataset.orderStatus;
+  const data = await api(`/api/orders/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: select.value }),
+  });
+  state.orders = data.orders || state.orders.map((order) => (order.id === id || order.transactionId === id ? data.order : order));
+  renderMetrics();
+  renderOrders();
+  renderOrderDetails(data.order);
+  toast("Status do pedido atualizado.");
+}
+
+function orderStatusLabel(status = "pending") {
+  return {
+    pending: "Pendente",
+    paid: "Pago",
+    delivering: "Em entrega",
+    completed: "Concluido",
+    cancelled: "Cancelado",
+  }[status] || status;
 }
 
 function renderCategoryFilter() {
@@ -557,6 +690,11 @@ function renderPaymentForm() {
   const blackcat = payment.blackcat || {};
   form.mode.value = payment.mode || "manual";
   form.manualPixCode.value = payment.manualPixCode || "";
+  form.manualPixKeyType.value = payment.manualPixKeyType || "random";
+  form.manualPixKey.value = payment.manualPixKey || "";
+  form.manualPixMerchantName.value = payment.manualPixMerchantName || blackcat.merchantName || "";
+  form.manualPixMerchantCity.value = payment.manualPixMerchantCity || "SAO PAULO";
+  form.manualPixDescription.value = payment.manualPixDescription || "Pedido Digitos";
   form.blackcatEnabled.checked = Boolean(blackcat.enabled);
   form.demoFallback.checked = payment.demoFallback !== false;
   form.blackcatApiUrl.value = blackcat.apiUrl || "https://api.blackcatpay.com.br/api";
@@ -667,6 +805,11 @@ async function savePayment() {
   const values = {
     mode: form.mode.value,
     manualPixCode: form.manualPixCode.value,
+    manualPixKeyType: form.manualPixKeyType.value,
+    manualPixKey: form.manualPixKey.value.trim(),
+    manualPixMerchantName: form.manualPixMerchantName.value.trim(),
+    manualPixMerchantCity: form.manualPixMerchantCity.value.trim(),
+    manualPixDescription: form.manualPixDescription.value.trim(),
     demoFallback: form.demoFallback.checked,
     blackcat: {
       enabled: form.blackcatEnabled.checked,
@@ -695,6 +838,11 @@ async function saveAll() {
   settings.payment = {
     mode: paymentForm.mode.value,
     manualPixCode: paymentForm.manualPixCode.value,
+    manualPixKeyType: paymentForm.manualPixKeyType.value,
+    manualPixKey: paymentForm.manualPixKey.value.trim(),
+    manualPixMerchantName: paymentForm.manualPixMerchantName.value.trim(),
+    manualPixMerchantCity: paymentForm.manualPixMerchantCity.value.trim(),
+    manualPixDescription: paymentForm.manualPixDescription.value.trim(),
     demoFallback: paymentForm.demoFallback.checked,
     blackcat: {
       enabled: paymentForm.blackcatEnabled.checked,
@@ -777,6 +925,10 @@ function nextId(items) {
 
 function normalize(value) {
   return String(value || "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+}
+
+function formatMoney(cents) {
+  return (Number(cents || 0) / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 function escapeHtml(value) {

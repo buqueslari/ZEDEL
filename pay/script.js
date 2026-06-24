@@ -2141,14 +2141,16 @@ createPixPayment = async function (formData = {}) {
                 country: 'BR'
             },
             items: cart.map((item) => ({
-                title: item.name || `Produto ${item.id}`,
+                title: getProduct(item.id)?.name || item.name || `Produto ${item.id}`,
                 unitPrice: Math.max(1, Math.round(Number(item.price || 0))),
                 quantity: Math.max(1, Math.round(Number(item.quantity || 1))),
                 tangible: true
             })),
             metadata: {
                 source: 'deliverydozexpress',
-                cartSize: cart.length
+                cartSize: cart.length,
+                couponApplied,
+                subtotal: totalAmount / 100
             }
         })
     });

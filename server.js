@@ -12,6 +12,7 @@ loadLocalEnv();
 const PRODUCTS_FILE = path.join(ROOT, "products.json");
 const CATEGORIES_FILE = path.join(ROOT, "categories.json");
 const ADMIN_DATA_FILE = path.join(ROOT, "admin-data.json");
+const ORDERS_FILE = path.join(ROOT, "orders.json");
 const ADMIN_DIR = path.join(ROOT, "private-admin");
 const PAY_DIR = path.join(ROOT, "pay");
 const DEFAULT_TEXT_OVERRIDES = require("./neutral-text-overrides.json");
@@ -94,6 +95,11 @@ const defaultData = {
     payment: {
       mode: "manual",
       manualPixCode: "PIX-DEMONSTRACAO-LOCAL-SEM-VALOR-REAL",
+      manualPixKey: "",
+      manualPixKeyType: "random",
+      manualPixMerchantName: "DIGITOS",
+      manualPixMerchantCity: "SAO PAULO",
+      manualPixDescription: "Pedido Digitos",
       demoFallback: true,
       blackcat: {
         enabled: false,
@@ -167,6 +173,7 @@ function timingSafeTextEqual(a, b) {
 function isAdminRequest(pathname, method) {
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
   if (pathname === "/api/admin/bootstrap") return true;
+  if (pathname === "/api/orders" || pathname.startsWith("/api/orders/")) return true;
   if ((pathname === "/api/settings" || pathname.startsWith("/api/products") || pathname.startsWith("/api/categories")) && method !== "GET") return true;
   return false;
 }
@@ -378,6 +385,22 @@ function storageObjectForTable(table) {
   throw new Error(`Tabela sem mapeamento de storage: ${table}`);
 }
 
+async function loadOrdersData() {
+  const seed = readJson(ORDERS_FILE, []);
+  if (!SUPABASE_ENABLED) return Array.isArray(seed) ? seed : [];
+  const orders = await loadSupabaseJson("orders.json", seed);
+  return Array.isArray(orders) ? orders : [];
+}
+
+async function saveOrdersData(orders) {
+  if (!SUPABASE_ENABLED) {
+    writeJson(ORDERS_FILE, orders);
+    return orders;
+  }
+  await saveSupabaseJson("orders.json", orders);
+  return orders;
+}
+
 async function getSupabaseItems(table, fallbackFile) {
   if (!SUPABASE_ENABLED) return readJson(fallbackFile, []);
   const seed = readJson(fallbackFile, []);
@@ -544,6 +567,151 @@ async function handleCollection(req, res, pathname, file, normalizer, itemLabel,
 const onlyDigits = (value) => String(value || "").replace(/\D/g, "");
 const asText = (value) => String(value || "").trim();
 
+function pixField(id, value) {
+  const text = String(value ?? "");
+  return `${id}${String(text.length).padStart(2, "0")}${text}`;
+}
+
+function normalizePixText(value, maxLength) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9 $%*+\-./:]/g, "")
+    .trim()
+    .toUpperCase()
+    .slice(0, maxLength);
+}
+
+function crc16Pix(payload) {
+  let crc = 0xffff;
+  for (let index = 0; index < payload.length; index += 1) {
+    crc ^= payload.charCodeAt(index) << 8;
+    for (let bit = 0; bit < 8; bit += 1) {
+      crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) : (crc << 1);
+      crc &= 0xffff;
+    }
+  }
+  return crc.toString(16).toUpperCase().padStart(4, "0");
+}
+
+function buildManualPixCode(payment, amountCents, transactionId) {
+  const pixKey = asText(payment.manualPixKey);
+  if (!pixKey) return asText(payment.manualPixCode || defaultData.settings.payment.manualPixCode);
+
+  const merchantName = normalizePixText(payment.manualPixMerchantName || payment.blackcat?.merchantName || "DIGITOS", 25) || "DIGITOS";
+  const merchantCity = normalizePixText(payment.manualPixMerchantCity || "SAO PAULO", 15) || "SAO PAULO";
+  const description = normalizePixText(payment.manualPixDescription || "Pedido Digitos", 62);
+  const txid = normalizePixText(transactionId.replace(/[^A-Za-z0-9]/g, ""), 25) || "***";
+  const merchantAccount = [
+    pixField("00", "br.gov.bcb.pix"),
+    pixField("01", pixKey),
+    description ? pixField("02", description) : "",
+  ].join("");
+  const amount = (amountCents / 100).toFixed(2);
+  const withoutCrc = [
+    pixField("00", "01"),
+    pixField("26", merchantAccount),
+    pixField("52", "0000"),
+    pixField("53", "986"),
+    pixField("54", amount),
+    pixField("58", "BR"),
+    pixField("59", merchantName),
+    pixField("60", merchantCity),
+    pixField("62", pixField("05", txid)),
+    "6304",
+  ].join("");
+  return `${withoutCrc}${crc16Pix(withoutCrc)}`;
+}
+
+function normalizeOrderItems(items = []) {
+  return Array.isArray(items)
+    ? items.map((item) => ({
+        id: item.id ?? item.productId ?? "",
+        title: asText(item.title || item.name || "Produto").slice(0, 160),
+        unitPrice: Math.max(0, Math.round(Number(item.unitPrice ?? item.price ?? 0))),
+        quantity: Math.max(1, Math.round(Number(item.quantity || 1))),
+      }))
+    : [];
+}
+
+function buildOrderRecord(body, { transactionId, gateway, pixCode, amountCents, status = "pending" }) {
+  const customer = normalizeCustomer(body.customer || body);
+  const shipping = normalizeShipping(body.shipping || body, customer);
+  const items = normalizeOrderItems(body.items);
+  const subtotalCents = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const totalCents = Math.max(0, Math.round(Number(amountCents || 0)));
+  return {
+    id: transactionId,
+    transactionId,
+    status,
+    gateway,
+    paymentMethod: "pix",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    customer: {
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      document: customer.document.number,
+    },
+    shipping,
+    items,
+    totals: {
+      subtotalCents: subtotalCents || totalCents,
+      totalCents,
+      amount: Number((totalCents / 100).toFixed(2)),
+    },
+    pix: {
+      code: pixCode,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    },
+    raw: {
+      metadata: body.metadata || {},
+      coupon: body.coupon || null,
+    },
+  };
+}
+
+async function upsertOrderRecord(order) {
+  try {
+    const orders = await loadOrdersData();
+    const index = orders.findIndex((entry) => entry.id === order.id || entry.transactionId === order.transactionId);
+    if (index >= 0) orders[index] = { ...orders[index], ...order, updatedAt: new Date().toISOString() };
+    else orders.unshift(order);
+    await saveOrdersData(orders.slice(0, 1000));
+  } catch (error) {
+    console.warn("Nao foi possivel salvar pedido:", error.message);
+  }
+}
+
+async function handleOrders(req, res, pathname) {
+  const orders = await loadOrdersData();
+  const match = pathname.match(/^\/api\/orders\/([^/]+)$/);
+
+  if (req.method === "GET" && !match) {
+    return json(res, { success: true, orders });
+  }
+
+  if (match && (req.method === "PATCH" || req.method === "PUT")) {
+    if (NEEDS_SUPABASE_FOR_WRITE) return supabaseRequired(res);
+    const id = decodeURIComponent(match[1]);
+    const payload = await readBody(req);
+    const index = orders.findIndex((order) => order.id === id || order.transactionId === id);
+    if (index === -1) return json(res, { success: false, error: "Pedido nao encontrado." }, 404);
+    const status = asText(payload.status || orders[index].status || "pending").slice(0, 40);
+    orders[index] = {
+      ...orders[index],
+      status,
+      note: payload.note !== undefined ? asText(payload.note).slice(0, 500) : orders[index].note,
+      updatedAt: new Date().toISOString(),
+    };
+    await saveOrdersData(orders);
+    return json(res, { success: true, order: orders[index], orders });
+  }
+
+  return json(res, { success: false, error: "Metodo nao suportado." }, 405);
+}
+
 function blackcatEnv() {
   const privateKey = process.env.BLACKCATPAY_PRIVATE_KEY || process.env.BLACKCATPAY_API_KEY || "";
   const publicKey = process.env.BLACKCATPAY_PUBLIC_KEY || "";
@@ -664,6 +832,12 @@ async function createPix(req, res) {
   if (payment.mode === "blackcat" && payment.blackcat?.enabled) {
     try {
       const response = await createBlackcatPix(body, amountCents);
+      await upsertOrderRecord(buildOrderRecord(body, {
+        transactionId: response.id,
+        gateway: "blackcatpay",
+        pixCode: response.pixCode,
+        amountCents,
+      }));
       return json(res, {
         success: true,
         gateway: "blackcatpay",
@@ -683,14 +857,23 @@ async function createPix(req, res) {
     }
   }
 
+  const transactionId = `manual-${Date.now()}`;
+  const manualPixCode = buildManualPixCode(payment, amountCents, transactionId);
+  await upsertOrderRecord(buildOrderRecord(body, {
+    transactionId,
+    gateway: payment.mode === "blackcat" ? "blackcat-fallback" : "manual",
+    pixCode: manualPixCode,
+    amountCents,
+  }));
+
   return json(res, {
     success: true,
     gateway: payment.mode === "blackcat" ? "blackcat-fallback" : "manual",
     data: {
-      transactionId: `local-${Date.now()}`,
+      transactionId,
       amount,
       pix: {
-        code: payment.manualPixCode || defaultData.settings.payment.manualPixCode,
+        code: manualPixCode,
         base64: null,
         image: null,
       },
@@ -877,6 +1060,7 @@ async function route(req, res) {
         database: SUPABASE_ENABLED ? "supabase-storage" : "json-local",
         products: await getSupabaseItems("delivery_products", PRODUCTS_FILE),
         categories: await getSupabaseItems("delivery_categories", CATEGORIES_FILE),
+        orders: await loadOrdersData(),
         settings: adminData.settings,
         updatedAt: adminData.updatedAt,
       });
@@ -902,11 +1086,24 @@ async function route(req, res) {
       return handleCollection(req, res, pathname, CATEGORIES_FILE, normalizeCategory, "categories", "delivery_categories");
     }
 
+    if (pathname === "/api/orders" || pathname.startsWith("/api/orders/")) {
+      return handleOrders(req, res, pathname);
+    }
+
     if (pathname === "/api/payment-api.php") {
       if (parsed.searchParams.get("action") === "status") {
         const id = parsed.searchParams.get("id") || "";
         if (id.startsWith("blackcatpay:")) {
           const status = await getBlackcatPaymentStatus(id);
+          if (status.paid) {
+            await upsertOrderRecord({
+              id,
+              transactionId: id,
+              status: "paid",
+              gateway: "blackcatpay",
+              updatedAt: new Date().toISOString(),
+            });
+          }
           return json(res, { success: true, status: status.paid ? "paid" : "pending", ...status });
         }
         return json(res, { success: true, status: "pending", localDemo: true });

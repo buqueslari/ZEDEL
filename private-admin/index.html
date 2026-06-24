@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Painel Admin - Digitos</title>
-  <link rel="stylesheet" href="/admin/admin.css?v=20260621-universal-texts">
+  <link rel="stylesheet" href="/admin/admin.css?v=20260624-admin-orders-pix">
   <script src="https://unpkg.com/lucide@latest" defer></script>
-  <script src="/admin/admin.js?v=20260621-universal-texts" defer></script>
+  <script src="/admin/admin.js?v=20260624-admin-orders-pix" defer></script>
 </head>
 <body>
   <aside class="sidebar">
@@ -19,6 +19,7 @@
     </div>
     <nav class="tabs" aria-label="Áreas do painel">
       <button class="tab active" data-tab="overview"><i data-lucide="layout-dashboard"></i><span>Visão geral</span></button>
+      <button class="tab" data-tab="orders"><i data-lucide="shopping-bag"></i><span>Pedidos</span></button>
       <button class="tab" data-tab="products"><i data-lucide="package"></i><span>Produtos</span></button>
       <button class="tab" data-tab="categories"><i data-lucide="tags"></i><span>Categorias</span></button>
       <button class="tab" data-tab="texts"><i data-lucide="type"></i><span>Textos da loja</span></button>
@@ -51,6 +52,7 @@
     <section id="overview" class="panel active-panel">
       <div class="metric-grid">
         <article class="metric"><span>Produtos</span><strong id="metricProducts">0</strong></article>
+        <article class="metric"><span>Pedidos</span><strong id="metricOrders">0</strong></article>
         <article class="metric"><span>Categorias</span><strong id="metricCategories">0</strong></article>
         <article class="metric"><span>Produtos em estoque</span><strong id="metricStock">0</strong></article>
         <article class="metric"><span>Pix ativo</span><strong id="metricPix">Manual</strong></article>
@@ -70,12 +72,35 @@
           <h2>Ações rápidas</h2>
           <div class="quick-actions">
             <button class="ghost" data-jump="products"><i data-lucide="package-plus"></i><span>Editar produtos</span></button>
+            <button class="ghost" data-jump="orders"><i data-lucide="shopping-bag"></i><span>Ver pedidos</span></button>
             <button class="ghost" data-jump="texts"><i data-lucide="type"></i><span>Alterar textos</span></button>
             <button class="ghost" data-jump="payments"><i data-lucide="qr-code"></i><span>Configurar Pix</span></button>
             <button class="ghost" data-jump="marketing"><i data-lucide="badge-dollar-sign"></i><span>Configurar pixel</span></button>
           </div>
         </section>
       </div>
+    </section>
+
+    <section id="orders" class="panel">
+      <div class="form-header">
+        <div>
+          <h2>Pedidos dos clientes</h2>
+          <p class="muted">Pedidos gerados no checkout com dados de entrega, itens, total e Pix.</p>
+        </div>
+        <div class="top-actions">
+          <select id="orderStatusFilter" aria-label="Filtrar status">
+            <option value="">Todos os status</option>
+            <option value="pending">Pendentes</option>
+            <option value="paid">Pagos</option>
+            <option value="delivering">Em entrega</option>
+            <option value="completed">ConcluÃ­dos</option>
+            <option value="cancelled">Cancelados</option>
+          </select>
+          <button id="refreshOrdersBtn" class="ghost" type="button"><i data-lucide="refresh-cw"></i><span>Atualizar</span></button>
+        </div>
+      </div>
+      <div id="ordersTable" class="table-wrap orders-wrap"></div>
+      <div id="orderDetails" class="order-details" hidden></div>
     </section>
 
     <section id="products" class="panel">
@@ -168,8 +193,25 @@
           <label><input type="radio" name="mode" value="manual"> Pix manual</label>
           <label><input type="radio" name="mode" value="blackcat"> Pix BlackCat</label>
         </fieldset>
-        <label class="wide">Código Pix manual
-          <textarea name="manualPixCode" rows="5"></textarea>
+        <div class="wide pix-helper">
+          <strong>Pix manual por chave</strong>
+          <span>Preencha sua chave Pix para o checkout gerar um Pix copia e cola com o valor exato do pedido. O QR Code mostrado ao cliente sera gerado em cima desse codigo.</span>
+        </div>
+        <label>Tipo de chave Pix
+          <select name="manualPixKeyType">
+            <option value="random">Aleatoria</option>
+            <option value="cpf">CPF</option>
+            <option value="cnpj">CNPJ</option>
+            <option value="email">E-mail</option>
+            <option value="phone">Telefone</option>
+          </select>
+        </label>
+        <label>Chave Pix <input name="manualPixKey" placeholder="Cole sua chave Pix"></label>
+        <label>Nome do recebedor <input name="manualPixMerchantName" maxlength="25" placeholder="Nome que aparece no banco"></label>
+        <label>Cidade do recebedor <input name="manualPixMerchantCity" maxlength="15" placeholder="SAO PAULO"></label>
+        <label class="wide">Descricao no Pix <input name="manualPixDescription" maxlength="62" placeholder="Pedido Digitos"></label>
+        <label class="wide">Codigo Pix pronto, opcional
+          <textarea name="manualPixCode" rows="4" placeholder="Use apenas se voce ja tiver um Pix copia e cola fixo. Com chave Pix preenchida, o sistema gera automaticamente."></textarea>
         </label>
         <label><input name="blackcatEnabled" type="checkbox"> BlackCat habilitado</label>
         <label><input name="demoFallback" type="checkbox"> Usar Pix manual se o BlackCat falhar</label>
